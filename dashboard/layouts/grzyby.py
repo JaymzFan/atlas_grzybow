@@ -8,8 +8,6 @@ main_page2 = html.Div([
 
 main_page = dbc.Container([
     dbc.Row([
-        dbc.Col(html.Div("asdf")),
-        dbc.Col(html.Div("aasdfff"))
-    ]),
-    dbc.Row(dbc.Col(html.Div("12345"), width="auto"))
+        dbc.Col(html.H1("Placeholder grzyby"), width='auto')
+    ])
 ])

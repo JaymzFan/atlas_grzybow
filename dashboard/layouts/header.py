@@ -9,7 +9,7 @@ navbar_zalogowany = dbc.NavbarSimple(
                 ],
                 nav=True,
                 in_navbar=True,
-                label="Lokalizacje",
+                label="Lokalizacje"
         ),
         dbc.DropdownMenu(
                 children=[
