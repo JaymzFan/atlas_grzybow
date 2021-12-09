@@ -42,7 +42,11 @@ def render_weather_table(weather_forecast: List) -> pd.DataFrame:
             id='weather_forecast_dt',
             columns=[{'name': i, "id": i} for i in df.columns],
             data=df.to_dict('records'),
-            style_table={'overflowX': 'auto'}
+            style_table={'overflowX': 'auto'},
+            style_as_list_view=True,
+            style_cell={
+                'font_size': '0.2rem'
+            }
     )
     return dt
 

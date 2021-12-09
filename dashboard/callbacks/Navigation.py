@@ -24,6 +24,7 @@ from config import get_sqlite_uri
 
 engine = create_engine(get_sqlite_uri())
 
+import json
 
 def register_callbacks(dashapp):
 
@@ -44,8 +45,10 @@ def register_callbacks(dashapp):
 
         raise PreventUpdate
 
+    # Logowanie
     @dashapp.callback([Output('url_login', 'pathname'),
-                       Output('output-state', 'children')],
+                       Output('output-state', 'children'),
+                       Output('logged_in_username', 'data')],
                       [Input('login-button', 'n_clicks')],
                       [State('uname-box', 'value'),
                        State('pwd-box', 'value')])
@@ -53,12 +56,20 @@ def register_callbacks(dashapp):
         if un is None or pwd is None:
             raise PreventUpdate
         user = Users.query.filter_by(username=un).first()
+        print(f"Logowanie: {un}")
         if user:
             if check_password_hash(user.password, pwd):
                 login_user(user)
-                return "/lokalizacje-przegladaj#", no_update
+                return "/lokalizacje-przegladaj#", no_update, {"un": un}
 
-        return no_update, dbc.Alert('Niewłaściwe hasło lub nazwa użytkownika', color='danger')
+        return no_update, dbc.Alert('Niewłaściwe hasło lub nazwa użytkownika', color='danger'), None
+
+    # Przywitanie w panelu uzytkowniku
+    @dashapp.callback(Output('current_user_welcome', 'children'),
+                      Input('url', 'pathname'),
+                      [State('logged_in_username', 'data')])
+    def welcome_user(url, data):
+        return f"Witaj {str(data['un'])}!"
 
     # ROUTING headera --------------------------------------------------------------
     @dashapp.callback(Output('header-content', 'children'),

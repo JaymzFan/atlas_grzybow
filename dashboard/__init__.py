@@ -19,6 +19,7 @@ def register_dashapps(app):
     from dashboard.content import layout
     from dashboard.callbacks.Navigation import register_callbacks
     from dashboard.callbacks.InteractiveMaps import register_callbacks as rc_maps
+    from dashboard.callbacks.ManagingFriends import register_callbacks as rc_friends
 
     dashapp = dash.Dash(__name__,
                         server=app,
@@ -31,6 +32,7 @@ def register_dashapps(app):
         dashapp.layout = layout
         register_callbacks(dashapp)
         rc_maps(dashapp)
+        rc_friends(dashapp)
 
 def register_extensions(server):
     from dashboard.extensions import db
