@@ -20,9 +20,9 @@ from dashboard.layouts import grzyby as nav_grzyby
 from dashboard.layouts import profil as nav_profil
 from dashboard.layouts import logowanie as nav_logowanie
 
-from config import get_sqlite_uri
+from config import get_db_uri
 
-engine = create_engine(get_sqlite_uri())
+engine = create_engine(get_db_uri())
 
 import json
 

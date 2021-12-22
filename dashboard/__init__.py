@@ -20,12 +20,19 @@ def register_dashapps(app):
     from dashboard.callbacks.Navigation import register_callbacks
     from dashboard.callbacks.InteractiveMaps import register_callbacks as rc_maps
     from dashboard.callbacks.ManagingFriends import register_callbacks as rc_friends
+    from dashboard.callbacks.MushroomsPage import register_callbacks as rc_mushrooms
 
     dashapp = dash.Dash(__name__,
                         server=app,
                         url_base_pathname='/',
                         external_stylesheets=[dbc.themes.BOOTSTRAP],
-                        suppress_callback_exceptions=True)
+                        suppress_callback_exceptions=True,
+                        meta_tags=[
+                            {
+                                "name"   : "viewport",
+                                "content": "width=device-width, initial-scale=1, maximum-scale=1",
+                            },
+                        ])
 
     with app.app_context():
         dashapp.title = Config.APP_TITLE
@@ -33,6 +40,8 @@ def register_dashapps(app):
         register_callbacks(dashapp)
         rc_maps(dashapp)
         rc_friends(dashapp)
+        rc_mushrooms(dashapp)
+
 
 def register_extensions(server):
     from dashboard.extensions import db
