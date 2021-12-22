@@ -27,12 +27,13 @@ def register_dashapps(app):
                         url_base_pathname='/',
                         external_stylesheets=[dbc.themes.BOOTSTRAP],
                         suppress_callback_exceptions=True,
-                        meta_tags=[
-                            {
-                                "name"   : "viewport",
-                                "content": "width=device-width, initial-scale=1, maximum-scale=1",
-                            },
-                        ])
+                        # meta_tags=[
+                        #     {
+                        #         "name"   : "viewport",
+                        #         "content": "width=device-width, initial-scale=1, maximum-scale=1",
+                        #     },
+                        # ]
+                        )
 
     with app.app_context():
         dashapp.title = Config.APP_TITLE
