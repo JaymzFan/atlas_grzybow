@@ -1,3 +1,6 @@
+import dash_bootstrap_components as dbc
+import dash_html_components as html
+
 from datetime import datetime
 
 from functools import lru_cache
@@ -14,14 +17,10 @@ import dash_table
 
 import pandas as pd
 
-
 from typing import List
 
 
 weather_api = WeatherAPI(API_KEY='0e62530620448044eb4a76de6180486e')
-
-# There is no point in fetching the data for the same place over and over again
-# during the same day, because the output will be identical
 
 
 @lru_cache(maxsize=500, typed=True)
@@ -30,6 +29,7 @@ def fetch_weather(today: datetime.date, lat: float, lon: float):
 
 
 def render_weather_table(weather_forecast: List) -> pd.DataFrame:
+    print(weather_forecast)
     df = pd.DataFrame.from_records(weather_forecast)
     df = df.transpose()
     df.reset_index()
@@ -51,6 +51,61 @@ def render_weather_table(weather_forecast: List) -> pd.DataFrame:
     return dt
 
 
+def from_datestr_to_wday_polish(datestr: str) -> str:
+    eng_wday = datetime.strptime(datestr, '%Y-%m-%d').strftime('%A')
+    pol_wdays = {
+        "Monday": "Poniedziałek",
+        "Tuesday": "Wtorek",
+        "Wednesday": "Środa",
+        "Thursday": "Czwartek",
+        "Friday": "Piątek",
+        "Saturday": "Sobota",
+        "Sunday": "Niedziela"
+    }
+    return pol_wdays[eng_wday]
+
+
+def render_weather_tables(weather_forecast: List) -> List:
+
+    forcasts_cards = []
+    for x in weather_forecast:
+        weather_card = dbc.Card(
+                dbc.CardBody([
+                    html.H2(from_datestr_to_wday_polish(datestr=x['dzien'])),
+                    html.P(x['dzien'], className="lead"),
+                    html.P(x['pogoda'].capitalize()),
+                    html.Hr(),
+                    dbc.Row([
+                        dbc.Col(dbc.Label('Wschód słońca'), width=4),
+                        dbc.Col(x['wschod_slonca'], width=8)
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Col(dbc.Label('Temp. rano (℃)'), width=4),
+                        dbc.Col(x['temperatura_poranek'], width=8)
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Col(dbc.Label('Temp. południe (℃)'), width=4),
+                        dbc.Col(x['temperatura_poludnie'], width=8)
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Col(dbc.Label('Wilgotność'), width=4),
+                        dbc.Col(x['wilgotnosc'], width=8)
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Col(dbc.Label('Zachmurzenie'), width=4),
+                        dbc.Col(x['zachmurzenie'], width=8)
+                    ], className="mb-3"),
+                    dbc.Row([
+                        dbc.Col(dbc.Label('Prawd. opadów'), width=4),
+                        dbc.Col(x['prawdop_opadow'], width=8)
+                    ], className="mb-3")
+                ])
+        )
+        forcasts_cards.append(dbc.Col(weather_card, width=12))
+
+    return forcasts_cards
+
+
 def register_callbacks(dash_app):
     @dash_app.callback(Output("main_page_lokalizacje_layer", "children"),
                        [Input("main_map", "click_lat_lng")])
@@ -58,14 +113,6 @@ def register_callbacks(dash_app):
         if click_lat_lng is None:
             raise PreventUpdate
         return [dl.Marker(position=click_lat_lng, children=dl.Tooltip("({:.3f}, {:.3f})".format(*click_lat_lng)))]
-
-    # @dash_app.callback(Output('main_map_locc', 'children'),
-    #                    [Input('main_map', 'click_lat_lng')])
-    # def store_curr_location(click_lat_lng):
-    #     if click_lat_lng is None:
-    #         raise PreventUpdate
-    #     click_lat_lng = [round(x, ndigits=2) for x in click_lat_lng]
-    #     return click_lat_lng
 
     @dash_app.callback(Output('prognoza_pogody', 'children'),
                        [Input('main_map', 'click_lat_lng')])
@@ -79,3 +126,19 @@ def register_callbacks(dash_app):
                                      lat=click_lat_lng[0],
                                      lon=click_lat_lng[1])
         return render_weather_table(weather_forecast=pogoda_teraz)
+
+    @dash_app.callback(Output('weather_forecast_placeholder', 'children'),
+                       [Input('main_map', 'click_lat_lng')])
+    def get_weather_forecast2(click_lat_lng):
+        if click_lat_lng is None:
+            raise PreventUpdate
+        click_lat_lng = [round(x, ndigits=1) for x in click_lat_lng]
+        today_date = datetime.now().date()
+
+        pogoda_teraz = fetch_weather(today=today_date,
+                                     lat=click_lat_lng[0],
+                                     lon=click_lat_lng[1])
+
+        return render_weather_tables(weather_forecast=pogoda_teraz)
+
+

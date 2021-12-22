@@ -9,7 +9,6 @@ MAP_STYLE = {'width': '100%', 'height': '25rem'}
 
 main_page = dbc.Container([
     dcc.Store(id='store_for_main_page_lokalizacje'),
-    dbc.Row(dbc.Col(html.H1("main_page lokalizacje"), width='auto')),
     dbc.Row(dbc.Col(html.Div(
             [dl.Map([
                 dl.TileLayer(),
@@ -19,7 +18,15 @@ main_page = dbc.Container([
                                           'showPopup': False})
             ], id='main_map', center=[52.15, 19.7], style=MAP_STYLE)]
     ))),
-    dbc.Row(dbc.Col(html.Div(id='prognoza_pogody')))
+    dbc.Accordion([
+        dbc.AccordionItem([
+        ], title="Wybierz lokalizację"),
+        dbc.AccordionItem([
+            dbc.Row(id='weather_forecast_placeholder')
+        ], title="Prognoza pogody"),
+        dbc.AccordionItem([
+        ], title="Udostępnij znajomym")
+    ], start_collapsed=True),
 ], fluid=True)
 
 manage = dbc.Container([
