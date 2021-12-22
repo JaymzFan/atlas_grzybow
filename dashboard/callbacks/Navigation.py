@@ -29,7 +29,8 @@ import json
 def register_callbacks(dashapp):
 
     # ROUTING LOGOWANIA ------------------------------------------------------------
-    @dashapp.callback(Output('url-rejestracja', 'pathname'),
+    @dashapp.callback([Output('url-rejestracja', 'pathname'),
+                       Output('acc_already_exists_modal', 'is_open')],
                       [Input('submit-val', 'n_clicks')],
                       [State('username', 'value'),
                        State('password', 'value'),
@@ -39,9 +40,13 @@ def register_callbacks(dashapp):
             hashed_pass = generate_password_hash(pw, method='sha256')
             user = Users(username=un, password=hashed_pass, email=em)
             db.session.add(user)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except:
+                return None, True
 
-            return "/profil-logowanie"
+
+            return "/profil-logowanie", False
 
         raise PreventUpdate
 

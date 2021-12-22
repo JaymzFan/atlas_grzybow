@@ -13,7 +13,9 @@ mushroom_imgs = dbc.Carousel(
 dropdown_options = html.Div([dcc.Dropdown(
         id='dropdown_mushroom_option',
         options=[],
-        placeholder="Wyszukaj z listy..."
+        placeholder="Wyszukaj z listy...",
+        style={'height': '2.5rem'}
+
 )])
 
 mushroom_card = dbc.Card(
