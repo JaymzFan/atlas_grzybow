@@ -5,7 +5,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 import dash_html_components as html
-
+import dash_bootstrap_components as dbc
 
 def load_mushrooms_data():
     demo_dane = [
@@ -19,7 +19,8 @@ def load_mushrooms_data():
                 './static/images_mushrooms/Boczniak1.png',
                 './static/images_mushrooms/Boczniak1.png',
                 './static/images_mushrooms/Boczniak1.png'
-            ]
+            ],
+            'Toxic': False
         },
         {
             'MushroomNameFormal'  : "Grzyb2",
@@ -29,7 +30,8 @@ def load_mushrooms_data():
                 './static/images_mushrooms/Boczniak2.png',
                 './static/images_mushrooms/Boczniak2.png',
                 './static/images_mushrooms/Boczniak2.png'
-            ]
+            ],
+            'Toxic': True
         },
         {
             'MushroomNameFormal'  : "Grzyb3",
@@ -39,7 +41,8 @@ def load_mushrooms_data():
                 './static/images_mushrooms/Boczniak3.png',
                 './static/images_mushrooms/Boczniak3.png',
                 './static/images_mushrooms/Boczniak3.png'
-            ]
+            ],
+            'Toxic': False
         },
         {
             'MushroomNameFormal'  : "Grzyb4",
@@ -49,7 +52,8 @@ def load_mushrooms_data():
                 './static/images_mushrooms/Boczniak4.png',
                 './static/images_mushrooms/Boczniak4.png',
                 './static/images_mushrooms/Boczniak4.png'
-            ]
+            ],
+            'Toxic': False
         }
     ]
 
@@ -152,8 +156,8 @@ def register_callbacks(dash_app):
 
         return available_mushrooms
 
-    @dash_app.callback([Output("mushroom_formal_name_view", "children"),
-                        Output("mushroom_informal_name_view", "children"),
+    @dash_app.callback([Output("mushroom_informal_name_view", "children"),
+                        Output("mushroom_formal_name_view", "children"),
                         Output("mushroom_info", "children")],
                        Input('mushrooms_viewer_current_view', 'data'))
     def card_view(data):
@@ -170,7 +174,36 @@ def register_callbacks(dash_app):
             info.append(html.Hr(className="my-1"))
             info.append(html.H4(y, className='card-title'))
 
-        return [formal_name], [informal_name], info
+        return [informal_name], formal_name, info
+
+    @dash_app.callback(Output("mushroom_toxic_badge", "children"),
+                       Input('mushrooms_viewer_current_view', 'data'))
+    def card_view_name(data):
+        if data is None:
+            return None
+
+        position, data = data
+
+        if data is None:
+            return 'primary'
+
+        if data['Toxic']:
+            badge = dbc.Badge('Trujący!', color='danger')
+        else:
+            badge = dbc.Badge('Jadalny', color='success')
+
+        return badge
+
+    @dash_app.callback(Output("mushroom-card", "color"),
+                       Input('mushrooms_viewer_current_view', 'data'))
+    def card_toxic_marker(data):
+        if data is None:
+            return 'primary'
+
+        if data[1]['Toxic']:
+            return 'danger'
+
+        return 'success'
 
     @dash_app.callback(Output("curr_mushroom_imgs", "items"),
                        Input('mushrooms_viewer_current_view', 'data'))

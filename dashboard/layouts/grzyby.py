@@ -20,10 +20,10 @@ dropdown_options = html.Div([dcc.Dropdown(
 
 mushroom_card = dbc.Card(
     [
-
         html.H1(id='mushroom_informal_name_view'),
         html.P(id='mushroom_formal_name_view',
                className="lead"),
+        html.H2(id='mushroom_toxic_badge'),
         mushroom_imgs,
         dbc.CardBody(
             [
@@ -33,7 +33,7 @@ mushroom_card = dbc.Card(
                 )
             ]
         ),
-    ]
+    ], id='mushroom-card', outline=True
 )
 
 main_page = dbc.Container([

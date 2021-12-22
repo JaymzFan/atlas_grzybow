@@ -25,7 +25,7 @@ def register_dashapps(app):
     dashapp = dash.Dash(__name__,
                         server=app,
                         url_base_pathname='/',
-                        external_stylesheets=[dbc.themes.BOOTSTRAP],
+                        external_stylesheets=[dbc.themes.DARKLY],
                         suppress_callback_exceptions=True,
                         # meta_tags=[
                         #     {
