@@ -36,6 +36,7 @@ def fetch_locations_data():
             'Opis'      : 'Opis 1',
             'Grzyby'    : ['Grzyb2', 'Grzyb3', "Grzyb6"],
             'Shared_by' : None,
+            'Shared_with': [{'id': 1, 'username': 'user1'}],
             'prywatnosc': "public"
         },
         {
@@ -45,6 +46,7 @@ def fetch_locations_data():
             'Opis'      : 'Opis 2',
             'Grzyby'    : ['Grzyb1', 'Grzyb3'],
             'Shared_by' : None,
+            'Shared_with':  [{'id': 2, 'username': 'user2'}],
             'prywatnosc': "public"
         },
         {
@@ -54,6 +56,8 @@ def fetch_locations_data():
             'Opis'      : 'Opis 3',
             'Grzyby'    : ['Grzyb1', 'Grzyb3'],
             'Shared_by' : 'Mietek',
+            'Shared_with':  [{'id': 1, 'username': 'user1'},
+                             {'id': 2, 'username': 'user2'}],
             'prywatnosc': "shared_with_me"
         },
         {
@@ -63,6 +67,7 @@ def fetch_locations_data():
             'Opis'      : 'Opis 4',
             'Grzyby'    : ['Grzyb1'],
             'Shared_by' : None,
+            'Shared_with': [],
             'prywatnosc': "my_location"
         }
     ]
@@ -138,6 +143,17 @@ def render_weather_tables(weather_forecast: List) -> List:
         forcasts_cards.append(dbc.Col(weather_card, width=12))
 
     return forcasts_cards
+
+
+def get_my_friends():
+    return [
+        {'id': 1, 'username': 'user1'},
+        {'id': 2, 'username': 'user2'},
+        {'id': 3, 'username': 'user3'},
+        {'id': 4, 'username': 'user4'},
+        {'id': 5, 'username': 'user5'},
+        {'id': 6, 'username': 'user6'}
+    ]
 
 
 def register_callbacks(dash_app):
@@ -222,9 +238,11 @@ def register_callbacks(dash_app):
                     if x['prywatnosc'] in loc_types]
 
         # filter by mushrooms
+        # all locations in which at least one mushroom from the list is available
         if mushroom_types:
-            for x in mushroom_types:
-                filt_loc = [_ for _ in filt_loc if x in _['Grzyby']]
+            filt_loc = [
+                x for x in filt_loc if any(y in mushroom_types for y in x['Grzyby'])
+            ]
 
         return filt_loc
 
@@ -297,3 +315,68 @@ def register_callbacks(dash_app):
             return dlx.dicts_to_geojson(render_geojson(data=all_locations))
 
         return dlx.dicts_to_geojson(render_geojson(data=filtered_locations))
+
+    @dash_app.callback([Output('loc_friends_shared_with', 'options'),
+                        Output('loc_friends_shared_with', 'value')],
+                       Input("store-current-location-data", "data"))
+    def show_friends_to_share_location(loc_data):
+
+        if loc_data is None:
+            raise PreventUpdate
+
+        if loc_data['prywatnosc'] == 'my_location':
+            opt_disabled = False
+        else:
+            opt_disabled = True
+
+        shared_with = loc_data['Shared_with']
+        all_friends = get_my_friends()
+
+        options = [{'label': x['username'], 'value': x['id'], 'disabled': opt_disabled} for x in all_friends]
+        values = [x['id'] for x in shared_with]
+
+        return options, values
+
+
+    @dash_app.callback([Output('modify-loc-name', 'value'),
+                        Output('modify-loc-information', 'value'),
+                        Output('modify-loc-mushrooms-list', 'options'),
+                        Output('modify-loc-mushrooms-list', 'value')],
+                       Input("store-current-location-data", "data"),
+                       State('store-all-locations-data', 'data'))
+    def modify_location(loc_data, all_loc):
+
+        if loc_data is None:
+            raise PreventUpdate
+
+        all_mushrooms_opt = [{'value': x, 'label': x} for x in get_mushrooms_types(all_loc)]
+
+        return loc_data['Nazwa'], loc_data['Opis'], all_mushrooms_opt, loc_data['Grzyby']
+
+    @dash_app.callback(Output('modify-loc-tab', 'disabled'),
+                       Input("store-current-location-data", "data"))
+    def hide_modification_tab(loc_data):
+        if loc_data is None:
+            return True
+
+        if loc_data['prywatnosc'] == 'my_location':
+            return False
+
+        return True
+
+    @dash_app.callback([Output('button-modify-loc-submit', 'disabled'),
+                        Output('button-save-loc-sharing', 'disabled')],
+                       Input("store-current-location-data", "data"))
+    def disable_modify_button(loc_data):
+        if loc_data is None:
+            return True, True
+
+        if loc_data['prywatnosc'] == 'my_location':
+            return False, False
+
+        return True, True
+
+    @dash_app.callback(Output('location_info_tabs', 'active_tab'),
+                       Input("store-current-location-data", "data"))
+    def always_activate_info_tab(loc_data):
+        return 0

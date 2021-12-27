@@ -10,7 +10,7 @@ locations_map = dl.Map([
     dl.TileLayer(),
     dl.GeoJSON(data=[], id='locations_markers'),
     dl.LocateControl(options={'locateOptions'       : {'enableHighAccuracy': True},
-                              'keepCurrentZoomLevel': False,
+                              'keepCurrentZoomLevel': True,
                               'showPopup'           : False})
 ], center=[52.15, 19.7], style=MAP_STYLE, id='locations_map')
 
@@ -24,6 +24,31 @@ clicked_loc_card = dbc.Card([
             ]
         ),
 ])
+
+modify_loc_card = dbc.Form([
+    dbc.Row([
+        dbc.Label("Nazwa"),
+        dbc.Col([
+            dcc.Input(type='text', id='modify-loc-name')
+        ])
+    ], className="mb-3"),
+    dbc.Row([
+        dbc.Label("Opis"),
+        dbc.Col([
+            dcc.Input(type='text', id='modify-loc-information')
+        ])
+    ]),
+    dbc.Row([
+        dbc.Label("Występujące grzyby:"),
+        dbc.Col([
+            dcc.Dropdown(options=[], value=[], multi=True, id='modify-loc-mushrooms-list')
+        ])
+    ]),
+    dbc.Row([
+        dbc.Button("Zapisz", id='button-modify-loc-submit', n_clicks=0)
+    ])
+])
+
 
 main_page = dbc.Container([
     dcc.Store(id='store_for_main_page_lokalizacje'),
@@ -85,16 +110,74 @@ main_page = dbc.Container([
     ),
     dbc.Accordion([
         dbc.AccordionItem([
-            clicked_loc_card
-        ], title="Informacje o lokalizacji"),
+            dbc.Tabs([
+                dbc.Tab(clicked_loc_card,
+                        label='Info',
+                        active_tab_style={"textTransform": "uppercase"}),
+                dbc.Tab(modify_loc_card,
+                        label='Modyfikuj',
+                        active_tab_style={"textTransform": "uppercase"},
+                        id='modify-loc-tab'),
+            ])
+        ], title="Informacje o lokalizacji", id='location_info_tabs'),
         dbc.AccordionItem([
             dbc.Row(id='weather_forecast_placeholder')
         ], title="Prognoza pogody"),
         dbc.AccordionItem([
+            dbc.Row(dbc.Col(dbc.Button('Zapisz zmiany', id='button-save-loc-sharing'))),
+            dbc.Checklist(
+                id='loc_friends_shared_with',
+                options=[],
+                value=[], labelStyle={"display": "block"}
+            )
         ], title="Udostępnij znajomym")
     ], start_collapsed=True),
 ], fluid=True)
 
+
+add_new_loc_card = dbc.Form([
+    dbc.Row([
+        dbc.Label("Położenie"),
+        dbc.Col([
+        ], id='add_new_loc_info')
+    ], className="mb-3"),
+    dbc.Row([
+        dbc.Label("Nazwa"),
+        dbc.Col([
+            dcc.Input(type='text', id='addnew-loc-name')
+        ])
+    ], className="mb-3"),
+    dbc.Row([
+        dbc.Label("Opis"),
+        dbc.Col([
+            dcc.Input(type='text', id='addnew-loc-information')
+        ])
+    ]),
+    dbc.Row([
+        dbc.Label("Występujące grzyby:"),
+        dbc.Col([
+            dcc.Dropdown(options=[], value=[], multi=True, id='addnew-loc-mushrooms-list')
+        ])
+    ]),
+    dbc.Row([
+        dbc.Button("Zapisz", id='button-addnew-loc-submit', n_clicks=0)
+    ])
+])
+
+add_new_locations_map = dl.Map([
+                dl.TileLayer(),
+                dl.LayerGroup(id="add-new-location-map-layer"),
+                dl.LocateControl(options={'locateOptions': {'enableHighAccuracy': True},
+                                          'keepCurrentZoomLevel': False,
+                                          'showPopup': False})
+            ], id='add-new-location-map', center=[52.15, 19.7], style=MAP_STYLE)
+
 manage = dbc.Container([
-    dbc.Row(dbc.Col(html.H1("manage lokalizacje")))
+    dcc.Store(id='store-all-locations-addnew-data'),
+    dbc.Row(dbc.Col([
+        add_new_locations_map
+    ])),
+    dbc.Row(dbc.Col([
+        add_new_loc_card
+    ]))
 ])
