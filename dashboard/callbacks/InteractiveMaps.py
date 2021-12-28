@@ -7,7 +7,7 @@ import dash_leaflet as dl
 
 from typing import List
 
-from dash import callback_context
+from dash import callback_context, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import dash_leaflet.express as dlx
@@ -74,6 +74,20 @@ def fetch_locations_data():
     return demo_data
 
 
+def fetch_mushrooms_availability():
+    demo_data = {
+        'Grzyb1': False,
+        'Grzyb2': False,
+        'Grzyb3': False,
+        'Grzyb4': True,
+        'Grzyb5': True,
+        'Grzyb6': True,
+        'Grzyb7': True,
+        'Grzyb8': True
+    }
+    return demo_data
+
+
 def render_geojson(data):
     data = [
         dict(lat=x['location']['lat'], lon=x['location']['lng'], popup=x['Nazwa'], id_lokalizacji=x['id'])
@@ -115,28 +129,28 @@ def render_weather_tables(weather_forecast: List) -> List:
                     html.P(x['pogoda'].capitalize()),
                     html.Hr(),
                     dbc.Row([
-                        dbc.Col(dbc.Label('Wschód słońca'), width=4),
-                        dbc.Col(x['wschod_slonca'], width=8)
+                        dbc.Col(dbc.Label('Wschód słońca'), width=8),
+                        dbc.Col(x['wschod_slonca'], width=4)
                     ], className="mb-3"),
                     dbc.Row([
-                        dbc.Col(dbc.Label('Temp. rano (℃)'), width=4),
-                        dbc.Col(x['temperatura_poranek'], width=8)
+                        dbc.Col(dbc.Label('Temp. rano (℃)'), width=8),
+                        dbc.Col(x['temperatura_poranek'], width=4)
                     ], className="mb-3"),
                     dbc.Row([
-                        dbc.Col(dbc.Label('Temp. południe (℃)'), width=4),
-                        dbc.Col(x['temperatura_poludnie'], width=8)
+                        dbc.Col(dbc.Label('Temp. południe (℃)'), width=8),
+                        dbc.Col(x['temperatura_poludnie'], width=4)
                     ], className="mb-3"),
                     dbc.Row([
-                        dbc.Col(dbc.Label('Wilgotność'), width=4),
-                        dbc.Col(x['wilgotnosc'], width=8)
+                        dbc.Col(dbc.Label('Wilgotność'), width=8),
+                        dbc.Col(x['wilgotnosc'], width=4)
                     ], className="mb-3"),
                     dbc.Row([
-                        dbc.Col(dbc.Label('Zachmurzenie'), width=4),
-                        dbc.Col(x['zachmurzenie'], width=8)
+                        dbc.Col(dbc.Label('Zachmurzenie'), width=8),
+                        dbc.Col(x['zachmurzenie'], width=4)
                     ], className="mb-3"),
                     dbc.Row([
-                        dbc.Col(dbc.Label('Prawd. opadów'), width=4),
-                        dbc.Col(x['prawdop_opadow'], width=8)
+                        dbc.Col(dbc.Label('Prawd. opadów'), width=8),
+                        dbc.Col(x['prawdop_opadow'], width=4)
                     ], className="mb-3")
                 ])
         )
@@ -163,19 +177,6 @@ def register_callbacks(dash_app):
         if click_lat_lng is None:
             raise PreventUpdate
         return [dl.Marker(position=click_lat_lng, children=dl.Tooltip("({:.3f}, {:.3f})".format(*click_lat_lng)))]
-
-    # @dash_app.callback(Output('prognoza_pogody', 'children'),
-    #                    [Input('main_map', 'click_lat_lng')])
-    # def get_weather_forecast(click_lat_lng):
-    #     if click_lat_lng is None:
-    #         raise PreventUpdate
-    #     click_lat_lng = [round(x, ndigits=1) for x in click_lat_lng]
-    #     today_date = datetime.now().date()
-    #
-    #     pogoda_teraz = fetch_weather(today=today_date,
-    #                                  lat=click_lat_lng[0],
-    #                                  lon=click_lat_lng[1])
-    #     return render_weather_table(weather_forecast=pogoda_teraz)
 
     @dash_app.callback(Output('weather_forecast_placeholder', 'children'),
                        [Input('store-current-location-data', 'data')])
@@ -204,11 +205,27 @@ def register_callbacks(dash_app):
 
     @dash_app.callback([Output("locations_filters_loctypes", "value"),
                         Output('locations_filters_mushroomtypes', 'value')],
-                       Input('locations_clear_filters', 'n_clicks'),
-                       [State("locations_filters_loctypes", "options")])
-    def wyczysc_filtry(n_clicks, location_types):
+                       [Input('locations_clear_filters', 'n_clicks'),
+                        Input('button-mark-sesonal-mushrooms', 'n_clicks')],
+                       [State("locations_filters_loctypes", "options"),
+                        State("locations_filters_mushroomtypes", "options")])
+    def wyczysc_filtry(n_clicks,
+                       n_clicks_seasonal_mushrooms,
+                       location_types,
+                       mushrooms_options):
         if n_clicks == 0:
             raise PreventUpdate
+        if n_clicks_seasonal_mushrooms == 0:
+            raise PreventUpdate
+
+        trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
+
+        if trigger == 'button-mark-sesonal-mushrooms':
+            seasonal_mushrooms_info = fetch_mushrooms_availability()
+            seasonal_mushrooms = [x[0] for x in seasonal_mushrooms_info.items() if x[1] is True]
+            all_mushrooms = [x['value'] for x in mushrooms_options if x['value'] in seasonal_mushrooms]
+            return no_update, all_mushrooms
+
         all_values = [x['value'] for x in location_types]
         return list(set(all_values)), []
 
@@ -248,7 +265,7 @@ def register_callbacks(dash_app):
 
     @dash_app.callback(Output("locations_filters_mushroomtypes", "options"),
                        Input('store-all-locations-data', 'data'))
-    def filter_locations(all_locations):
+    def filter_mushrooms(all_locations):
         if all_locations is None:
             raise PreventUpdate
 
@@ -293,7 +310,22 @@ def register_callbacks(dash_app):
         if location_data is None:
             return None, None, None
 
-        mushrooms_list = [dbc.ListGroupItem(x) for x in location_data['Grzyby']]
+        seasonal_mushrooms = fetch_mushrooms_availability()
+
+        for key, value in seasonal_mushrooms.items():
+            if value is True:
+                seasonal_mushrooms[key] = {
+                    "badge": dbc.Badge("W sezonie", color='success'),
+                    'color': 'success'
+                }
+            else:
+                seasonal_mushrooms[key] = {
+                    'badge': dbc.Badge("Poza sezonem", color='secondary'),
+                    'color': 'secondary'
+                }
+
+        mushrooms_list = [dbc.ListGroupItem([html.Div([x, " ", seasonal_mushrooms[x]['badge']])],
+                                            color=seasonal_mushrooms[x]['color']) for x in location_data['Grzyby']]
 
         return location_data['Nazwa'], location_data['Opis'], mushrooms_list
 

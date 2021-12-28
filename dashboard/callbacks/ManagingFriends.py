@@ -1,3 +1,4 @@
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 
 from dash.exceptions import PreventUpdate
@@ -5,8 +6,13 @@ from dash.exceptions import PreventUpdate
 from dashboard.models import Friends, Users
 from dashboard.extensions import db
 
+from typing import List
 
 import json
+
+
+def render_friends_list(friends: List[str]) -> List:
+    return [dbc.ListGroupItem(x) for x in friends]
 
 
 def register_callbacks(dash_app):
@@ -22,7 +28,7 @@ def register_callbacks(dash_app):
         friendships = Friends.query.filter_by(friend1=un).all()
         friendships = [x.friend2 for x in friendships]
         friendships = list(set(friendships))
-        return str(friendships)
+        return render_friends_list(friendships)
 
     @dash_app.callback(Output("add_friend_status", "children"),
                        [Input('add_friend-submit', 'n_clicks')],

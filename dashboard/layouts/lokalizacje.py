@@ -4,10 +4,10 @@ import dash_bootstrap_components as dbc
 
 import dash_leaflet as dl
 
-MAP_STYLE = {'width': '100%', 'height': '25rem'}
+MAP_STYLE = {'width': '100%', 'height': '25rem', 'transform': 'scale(1)'}
 
 locations_map = dl.Map([
-    dl.TileLayer(),
+    dl.TileLayer(updateWhenZooming=False),
     dl.GeoJSON(data=[], id='locations_markers'),
     dl.LocateControl(options={'locateOptions'       : {'enableHighAccuracy': True},
                               'keepCurrentZoomLevel': True,
@@ -35,13 +35,13 @@ modify_loc_card = dbc.Form([
     dbc.Row([
         dbc.Label("Opis"),
         dbc.Col([
-            dcc.Input(type='text', id='modify-loc-information')
+            dbc.Textarea(id='modify-loc-information')
         ])
     ]),
     dbc.Row([
         dbc.Label("Występujące grzyby:"),
         dbc.Col([
-            dcc.Dropdown(options=[], value=[], multi=True, id='modify-loc-mushrooms-list')
+           dcc.Dropdown(options=[], value=[], multi=True, id='modify-loc-mushrooms-list')
         ])
     ]),
     dbc.Row([
@@ -50,14 +50,7 @@ modify_loc_card = dbc.Form([
 ])
 
 
-main_page = dbc.Container([
-    dcc.Store(id='store_for_main_page_lokalizacje'),
-    dcc.Store(id='store-all-locations-data'),
-    dcc.Store(id='store-filtered-locations-ids'),
-    dcc.Store(id='store-current-location-data'),
-    dbc.Row(dbc.Col(html.Div([locations_map]))),
-    dbc.Row(dbc.Col(dbc.Button('Pokaż filtry lokalizacji', id='locations_show_filters'))),
-    dbc.Offcanvas([
+filtry_canvas = dbc.Offcanvas([
         dbc.Row(dbc.Col(
                 html.Div(
                         dbc.Button("Zastosuj filtry", id='locations_apply_filters', color='success'),
@@ -94,6 +87,7 @@ main_page = dbc.Container([
             html.Div(
                     [
                         dbc.Label("Musi zawierać:"),
+                        dbc.Button('Zaznacz grzyby sezonowe', id='button-mark-sesonal-mushrooms', className='py-1'),
                         dbc.Checklist(
                                 options=[],
                                 value=[],
@@ -107,7 +101,16 @@ main_page = dbc.Container([
             id='locations_filters',
             title='Filtry lokalizacji',
             is_open=False
-    ),
+    )
+
+main_page = dbc.Container([
+    dcc.Store(id='store_for_main_page_lokalizacje'),
+    dcc.Store(id='store-all-locations-data'),
+    dcc.Store(id='store-filtered-locations-ids'),
+    dcc.Store(id='store-current-location-data'),
+    dbc.Row(dbc.Col(html.Div([locations_map]))),
+    dbc.Row(dbc.Button('Pokaż filtry lokalizacji', id='locations_show_filters')),
+    filtry_canvas,
     dbc.Accordion([
         dbc.AccordionItem([
             dbc.Tabs([
@@ -176,7 +179,7 @@ manage = dbc.Container([
     dcc.Store(id='store-all-locations-addnew-data'),
     dbc.Row(dbc.Col([
         add_new_locations_map
-    ])),
+    ], width=10, align='center')),
     dbc.Row(dbc.Col([
         add_new_loc_card
     ]))

@@ -6,20 +6,13 @@ navbar_zalogowany = dbc.NavbarSimple(
         dbc.DropdownMenu(
                 children=[
                     dbc.DropdownMenuItem("Przeglądaj", href="lokalizacje-przegladaj#"),
-                    dbc.DropdownMenuItem("Dodaj/Usuń lokalizacje", href="lokalizacje-modyfikuj#")
+                    dbc.DropdownMenuItem("Dodaj lokalizację", href="lokalizacje-modyfikuj#")
                 ],
                 nav=True,
                 in_navbar=True,
                 label="Lokalizacje"
         ),
-        dbc.DropdownMenu(
-                children=[
-                    dbc.DropdownMenuItem("Przeglądaj", href="grzyby-przegladaj#")
-                ],
-                nav=True,
-                in_navbar=True,
-                label="Grzyby",
-        ),
+        dbc.NavItem(dbc.NavLink("Grzyby", href="grzyby-przegladaj#")),
         dbc.DropdownMenu(
             children=[
                 dbc.DropdownMenuItem("Szczegóły", href='profil-szczegoly#'),

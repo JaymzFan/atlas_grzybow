@@ -22,6 +22,7 @@ def register_dashapps(app):
     from dashboard.callbacks.manage_locations import register_callbacks as rc_addnew_loc
     from dashboard.callbacks.ManagingFriends import register_callbacks as rc_friends
     from dashboard.callbacks.MushroomsPage import register_callbacks as rc_mushrooms
+    from dashboard.callbacks.ProfileManagement import register_callbacks as rc_profile
 
     dashapp = dash.Dash(__name__,
                         server=app,
@@ -44,6 +45,7 @@ def register_dashapps(app):
         rc_friends(dashapp)
         rc_mushrooms(dashapp)
         rc_addnew_loc(dashapp)
+        rc_profile(dashapp)
 
 
 def register_extensions(server):
