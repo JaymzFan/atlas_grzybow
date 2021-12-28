@@ -14,8 +14,11 @@ dropdown_options = html.Div([dcc.Dropdown(
         id='dropdown_mushroom_option',
         options=[],
         placeholder="Wyszukaj z listy...",
-        style={'height': '2.5rem'}
-
+        style={'height': '2.5rem',
+               'color'           : '#212121',
+               'background-color': '#212121',
+               'Select-value-label-color': '#3333333'
+               }
 )])
 
 mushroom_card = dbc.Card(

@@ -77,7 +77,7 @@ def fetch_locations_data():
 def fetch_mushrooms_availability():
     demo_data = {
         'Grzyb1': False,
-        'Grzyb2': False,
+        'Grzyb2': True,
         'Grzyb3': False,
         'Grzyb4': True,
         'Grzyb5': True,
@@ -397,16 +397,17 @@ def register_callbacks(dash_app):
         return True
 
     @dash_app.callback([Output('button-modify-loc-submit', 'disabled'),
-                        Output('button-save-loc-sharing', 'disabled')],
+                        Output('button-save-loc-sharing', 'disabled'),
+                        Output('button-delete-loc-submit', 'disabled')],
                        Input("store-current-location-data", "data"))
     def disable_modify_button(loc_data):
         if loc_data is None:
-            return True, True
+            return True, True, True
 
         if loc_data['prywatnosc'] == 'my_location':
-            return False, False
+            return False, False, False
 
-        return True, True
+        return True, True, True
 
     @dash_app.callback(Output('location_info_tabs', 'active_tab'),
                        Input("store-current-location-data", "data"))

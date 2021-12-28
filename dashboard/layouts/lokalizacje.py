@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 
 import dash_leaflet as dl
 
-MAP_STYLE = {'width': '100%', 'height': '25rem', 'transform': 'scale(1)'}
+MAP_STYLE = {'width': '100%', 'height': '25rem'}
 
 locations_map = dl.Map([
     dl.TileLayer(updateWhenZooming=False),
@@ -29,7 +29,7 @@ modify_loc_card = dbc.Form([
     dbc.Row([
         dbc.Label("Nazwa"),
         dbc.Col([
-            dcc.Input(type='text', id='modify-loc-name')
+            dbc.Input(type='text', id='modify-loc-name')
         ])
     ], className="mb-3"),
     dbc.Row([
@@ -41,11 +41,21 @@ modify_loc_card = dbc.Form([
     dbc.Row([
         dbc.Label("Występujące grzyby:"),
         dbc.Col([
-           dcc.Dropdown(options=[], value=[], multi=True, id='modify-loc-mushrooms-list')
+           dcc.Dropdown(options=[], value=[], multi=True, id='modify-loc-mushrooms-list',
+                        style=
+                            {'color'           : '#212121',
+                             'background-color': '#212121',
+                             }
+                        )
         ])
     ]),
     dbc.Row([
-        dbc.Button("Zapisz", id='button-modify-loc-submit', n_clicks=0)
+        dbc.Button("Zapisz", id='button-modify-loc-submit', n_clicks=0,
+                   style={'margin-top': '2rem'})
+    ]),
+    dbc.Row([
+        dbc.Button("Usuń lokalizację", color='danger', id='button-delete-loc-submit', n_clicks=0,
+                   style={'margin-top': '2rem'})
     ])
 ])
 
@@ -147,19 +157,24 @@ add_new_loc_card = dbc.Form([
     dbc.Row([
         dbc.Label("Nazwa"),
         dbc.Col([
-            dcc.Input(type='text', id='addnew-loc-name')
+            dbc.Input(type='text', id='addnew-loc-name')
         ])
     ], className="mb-3"),
     dbc.Row([
         dbc.Label("Opis"),
         dbc.Col([
-            dcc.Input(type='text', id='addnew-loc-information')
+            dbc.Textarea(id='addnew-loc-information')
         ])
     ]),
     dbc.Row([
         dbc.Label("Występujące grzyby:"),
         dbc.Col([
-            dcc.Dropdown(options=[], value=[], multi=True, id='addnew-loc-mushrooms-list')
+            dcc.Dropdown(options=[], value=[], multi=True, id='addnew-loc-mushrooms-list',
+                         style=
+                         {'color'           : '#212121',
+                          'background-color': '#212121',
+                          }
+                         )
         ])
     ]),
     dbc.Row([
@@ -179,8 +194,8 @@ manage = dbc.Container([
     dcc.Store(id='store-all-locations-addnew-data'),
     dbc.Row(dbc.Col([
         add_new_locations_map
-    ], width=10, align='center')),
+    ], width=12, align='center')),
     dbc.Row(dbc.Col([
         add_new_loc_card
     ]))
-])
+], fluid=True)

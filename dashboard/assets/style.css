@@ -1,9 +1,19 @@
 * {
 font-size: 1.5rem;
-line-height: 1;
+line-height: 2rem;
 }
 
 .navbar-brand
     {
       font-size: larger;
     }
+
+.leaflet-control-zoom-in {
+    width: 500px;
+    height: 500px;
+    line-height: 50px;
+}
+
+.has-value.Select--single > .Select-control .Select-value .Select-value-label, .has-value.is-pseudo-focused.Select--single > .Select-control .Select-value .Select-value-label {
+	color: #007eef;
+}
