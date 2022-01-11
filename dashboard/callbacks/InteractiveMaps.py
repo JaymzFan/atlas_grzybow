@@ -24,8 +24,6 @@ from config import get_db_uri
 from sqlalchemy import create_engine
 
 
-# Prepare connection to Database
-db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
 
 weather_api = WeatherAPI(API_KEY='0e62530620448044eb4a76de6180486e')
 
@@ -36,11 +34,17 @@ def fetch_weather(today: datetime.date, lat: float, lon: float):
 
 
 def fetch_locations_data(owner_id):
+    # Prepare connection to Database
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
     return db.fetch_locations_data(owner_id=owner_id,
                                    shared_with_user_id=owner_id)
 
 
 def fetch_mushrooms_availability():
+    # Prepare connection to Database
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
     from datetime import date
     today_month = str(date.today().month)
     dataset = {}
@@ -182,6 +186,8 @@ def render_weather_tables(weather_forecast: List) -> List:
 
 
 def get_my_friends(user_id):
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
     my_friends = db.friends.fetch_friends(filters=dict(friend1=user_id))
     return [{'id': x.__dict__['id'], 'username': x.__dict__['friend2']} for x in my_friends]
 

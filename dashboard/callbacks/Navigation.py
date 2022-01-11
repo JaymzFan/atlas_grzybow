@@ -44,6 +44,8 @@ def register_callbacks(dashapp):
                 db.session.commit()
             except:
                 return None, True
+            finally:
+                engine.dispose()
 
 
             return "/profil-logowanie", False
@@ -65,8 +67,10 @@ def register_callbacks(dashapp):
         if user:
             if check_password_hash(user.password, pwd):
                 login_user(user)
+                engine.dispose()
                 return "/lokalizacje-przegladaj#", no_update, {"un": un, 'id': user.id}
 
+        engine.dispose()
         return no_update, dbc.Alert('Niewłaściwe hasło lub nazwa użytkownika', color='danger'), None
 
     # Przywitanie w panelu uzytkowniku

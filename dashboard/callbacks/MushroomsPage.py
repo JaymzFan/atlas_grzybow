@@ -16,66 +16,11 @@ from sqlalchemy import create_engine
 
 
 # Prepare connection to Database
-db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
 
 
 def load_mushrooms_data():
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
     return db.fetch_mushrooms_data()
-# def load_mushrooms_data():
-#     demo_dane = [
-#         {
-#             'MushroomNameFormal'  : "Grzyb1",
-#             'MushroomNameInFormal': "Nieformalna Grzyb1",
-#             'MushroomInfo'        : {'Opis': "Opis Grzyba1",
-#                                      "Cechy": "Cechy",
-#                                      "Cechy inne": "Cechy innne"},
-#             'Photos'              : [
-#                 './static/images_mushrooms/Boczniak1.png',
-#                 './static/images_mushrooms/Boczniak1.png',
-#                 './static/images_mushrooms/Boczniak1.png'
-#             ],
-#             'Toxic': True,
-#             'Eatable': True
-#         },
-#         {
-#             'MushroomNameFormal'  : "Grzyb2",
-#             'MushroomNameInFormal': "Nieformalna Grzyb2",
-#             'MushroomInfo'        : {'opis': "Opis Grzyba2"},
-#             'Photos'              : [
-#                 './static/images_mushrooms/Boczniak2.png',
-#                 './static/images_mushrooms/Boczniak2.png',
-#                 './static/images_mushrooms/Boczniak2.png'
-#             ],
-#             'Toxic': False,
-#             'Eatable': False
-#         },
-#         {
-#             'MushroomNameFormal'  : "Grzyb3",
-#             'MushroomNameInFormal': "Nieformalna Grzyb3",
-#             'MushroomInfo'        : {'opis': "Opis Grzyba3"},
-#             'Photos'              : [
-#                 './static/images_mushrooms/Boczniak3.png',
-#                 './static/images_mushrooms/Boczniak3.png',
-#                 './static/images_mushrooms/Boczniak3.png'
-#             ],
-#             'Toxic': False,
-#             'Eatable': True
-#         },
-#         {
-#             'MushroomNameFormal'  : "Grzyb4",
-#             'MushroomNameInFormal': "Nieformalna Grzyb4",
-#             'MushroomInfo'        : {'opis': "Opis Grzyba4"},
-#             'Photos'              : [
-#                 './static/images_mushrooms/Boczniak4.png',
-#                 './static/images_mushrooms/Boczniak4.png',
-#                 './static/images_mushrooms/Boczniak4.png'
-#             ],
-#             'Toxic': False,
-#             'Eatable': True
-#         }
-#     ]
-#
-#     return demo_dane
 
 
 def register_callbacks(dash_app):
