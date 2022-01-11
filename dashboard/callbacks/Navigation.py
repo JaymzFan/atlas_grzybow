@@ -65,7 +65,7 @@ def register_callbacks(dashapp):
         if user:
             if check_password_hash(user.password, pwd):
                 login_user(user)
-                return "/lokalizacje-przegladaj#", no_update, {"un": un}
+                return "/lokalizacje-przegladaj#", no_update, {"un": un, 'id': user.id}
 
         return no_update, dbc.Alert('Niewłaściwe hasło lub nazwa użytkownika', color='danger'), None
 

@@ -17,6 +17,15 @@ from functools import lru_cache
 
 from dashboard.features.weather_api_featching import WeatherAPI
 
+from database.DatabaseInterface import DatabaseSessionManager, DatabaseFacade
+
+from config import get_db_uri
+
+from sqlalchemy import create_engine
+
+
+# Prepare connection to Database
+db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
 
 weather_api = WeatherAPI(API_KEY='0e62530620448044eb4a76de6180486e')
 
@@ -26,66 +35,79 @@ def fetch_weather(today: datetime.date, lat: float, lon: float):
     return weather_api.fetch_weather(lat=lat, lon=lon)
 
 
-# TODO: pamiętaj o deduplikacji. Ta sama lokalizacja moze byc udostepniona i byc moja
-def fetch_locations_data():
-    demo_data = [
-        {
-            'id'        : 1,
-            'location'  : {'lng': 21, 'lat': 51, 'radius': 50},
-            'Nazwa'     : 'Lokalizacja 1',
-            'Opis'      : 'Opis 1',
-            'Grzyby'    : ['Grzyb2', 'Grzyb3', "Grzyb6"],
-            'Shared_by' : None,
-            'Shared_with': [{'id': 1, 'username': 'user1'}],
-            'prywatnosc': "public"
-        },
-        {
-            'id'        : 2,
-            'location'  : {'lng': 21, 'lat': 52, 'radius': 500},
-            'Nazwa'     : 'Lokalizacja 2',
-            'Opis'      : 'Opis 2',
-            'Grzyby'    : ['Grzyb1', 'Grzyb3'],
-            'Shared_by' : None,
-            'Shared_with':  [{'id': 2, 'username': 'user2'}],
-            'prywatnosc': "public"
-        },
-        {
-            'id'        : 3,
-            'location'  : {'lng': 21, 'lat': 53, 'radius': 50},
-            'Nazwa'     : 'Lokalizacja 3',
-            'Opis'      : 'Opis 3',
-            'Grzyby'    : ['Grzyb1', 'Grzyb3'],
-            'Shared_by' : 'Mietek',
-            'Shared_with':  [{'id': 1, 'username': 'user1'},
-                             {'id': 2, 'username': 'user2'}],
-            'prywatnosc': "shared_with_me"
-        },
-        {
-            'id'        : 4,
-            'location'  : {'lng': 21, 'lat': 54, 'radius': 50},
-            'Nazwa'     : 'Lokalizacja 4',
-            'Opis'      : 'Opis 4',
-            'Grzyby'    : ['Grzyb1'],
-            'Shared_by' : None,
-            'Shared_with': [],
-            'prywatnosc': "my_location"
-        }
-    ]
-    return demo_data
+def fetch_locations_data(owner_id):
+    return db.fetch_locations_data(owner_id=owner_id,
+                                   shared_with_user_id=owner_id)
 
 
 def fetch_mushrooms_availability():
-    demo_data = {
-        'Grzyb1': False,
-        'Grzyb2': True,
-        'Grzyb3': False,
-        'Grzyb4': True,
-        'Grzyb5': True,
-        'Grzyb6': True,
-        'Grzyb7': True,
-        'Grzyb8': True
-    }
-    return demo_data
+    from datetime import date
+    today_month = str(date.today().month)
+    dataset = {}
+    for x in db.fetch_mushrooms_data():
+        dataset[x['MushroomNameInFormal']] = x['MonthsAvailable'][today_month]
+    return dataset
+
+# # TODO: pamiętaj o deduplikacji. Ta sama lokalizacja moze byc udostepniona i byc moja
+# def fetch_locations_data():
+#     demo_data = [
+#         {
+#             'id'        : 1,
+#             'location'  : {'lng': 21, 'lat': 51, 'radius_in_meters': 2500},
+#             'Nazwa'     : 'Lokalizacja 1',
+#             'Opis'      : 'Opis 1',
+#             'Grzyby'    : ['Grzyb2', 'Grzyb3', "Grzyb6"],
+#             'Shared_by' : None,
+#             'Shared_with': [{'id': 1, 'username': 'user1'}],
+#             'prywatnosc': "public"
+#         },
+#         {
+#             'id'        : 2,
+#             'location'  : {'lng': 21, 'lat': 52, 'radius_in_meters': 500},
+#             'Nazwa'     : 'Lokalizacja 2',
+#             'Opis'      : 'Opis 2',
+#             'Grzyby'    : ['Grzyb1', 'Grzyb3'],
+#             'Shared_by' : None,
+#             'Shared_with':  [{'id': 2, 'username': 'user2'}],
+#             'prywatnosc': "public"
+#         },
+#         {
+#             'id'        : 3,
+#             'location'  : {'lng': 21, 'lat': 53, 'radius_in_meters': 150},
+#             'Nazwa'     : 'Lokalizacja 3',
+#             'Opis'      : 'Opis 3',
+#             'Grzyby'    : ['Grzyb1', 'Grzyb3'],
+#             'Shared_by' : 'Mietek',
+#             'Shared_with':  [{'id': 1, 'username': 'user1'},
+#                              {'id': 2, 'username': 'user2'}],
+#             'prywatnosc': "shared_with_me"
+#         },
+#         {
+#             'id'        : 4,
+#             'location'  : {'lng': 21, 'lat': 54, 'radius_in_meters': 350},
+#             'Nazwa'     : 'Lokalizacja 4',
+#             'Opis'      : 'Opis 4',
+#             'Grzyby'    : ['Grzyb1'],
+#             'Shared_by' : None,
+#             'Shared_with': [],
+#             'prywatnosc': "my_location"
+#         }
+#     ]
+#     return demo_data
+
+
+# def fetch_mushrooms_availability():
+#     demo_data = {
+#         'Grzyb1': False,
+#         'Grzyb2': True,
+#         'Grzyb3': False,
+#         'Grzyb4': True,
+#         'Grzyb5': True,
+#         'Grzyb6': True,
+#         'Grzyb7': True,
+#         'Grzyb8': True
+#     }
+#     return demo_data
 
 
 def render_geojson(data):
@@ -159,15 +181,18 @@ def render_weather_tables(weather_forecast: List) -> List:
     return forcasts_cards
 
 
-def get_my_friends():
-    return [
-        {'id': 1, 'username': 'user1'},
-        {'id': 2, 'username': 'user2'},
-        {'id': 3, 'username': 'user3'},
-        {'id': 4, 'username': 'user4'},
-        {'id': 5, 'username': 'user5'},
-        {'id': 6, 'username': 'user6'}
-    ]
+def get_my_friends(user_id):
+    my_friends = db.friends.fetch_friends(filters=dict(friend1=user_id))
+    return [{'id': x.__dict__['id'], 'username': x.__dict__['friend2']} for x in my_friends]
+
+    # return [
+    #     {'id': 1, 'username': 'user1'},
+    #     {'id': 2, 'username': 'user2'},
+    #     {'id': 3, 'username': 'user3'},
+    #     {'id': 4, 'username': 'user4'},
+    #     {'id': 5, 'username': 'user5'},
+    #     {'id': 6, 'username': 'user6'}
+    # ]
 
 
 def register_callbacks(dash_app):
@@ -230,12 +255,13 @@ def register_callbacks(dash_app):
         return list(set(all_values)), []
 
     @dash_app.callback(Output("store-all-locations-data", "data"),
-                       Input('url', 'pathname'))
-    def load_locations_data(url):
+                       Input('url', 'pathname'),
+                       State('logged_in_username', 'data'))
+    def load_locations_data(url, un):
         if url != '/lokalizacje-przegladaj':
             raise PreventUpdate
 
-        return fetch_locations_data()
+        return fetch_locations_data(owner_id=un['id'])
 
     @dash_app.callback(Output("store-filtered-locations-ids", "data"),
                        Input('locations_apply_filters', 'n_clicks'),
@@ -333,7 +359,7 @@ def register_callbacks(dash_app):
                        [Input("locations_clear_filters", "n_clicks"),
                        Input("store-filtered-locations-ids", "data")],
                        Input("store-all-locations-data", "data"))
-    def render_filtered_locations(n_clicks, filtered_locations, all_locations):
+    def render_filtered_locations_markers(n_clicks, filtered_locations, all_locations):
 
         # determining which button was pushed
         trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
@@ -348,10 +374,39 @@ def register_callbacks(dash_app):
 
         return dlx.dicts_to_geojson(render_geojson(data=filtered_locations))
 
+    @dash_app.callback(Output("locations_circles", "children"),
+                       [Input("locations_clear_filters", "n_clicks"),
+                       Input("store-filtered-locations-ids", "data")],
+                       Input("store-all-locations-data", "data"))
+    def render_filtered_locations_circles(n_clicks, filtered_locations, all_locations):
+
+        # determining which button was pushed
+        trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
+
+        if trigger == 'locations_clear_filters' and all_locations is not None:
+            return [dl.Circle(center=[x['location']['lat'], x['location']['lng']],
+                              radius=x['location']['radius_in_meters'],
+                              interactive=False)
+                    for x in all_locations]
+
+        if filtered_locations is None:
+            if all_locations is None:
+                raise PreventUpdate
+            return [dl.Circle(center=[x['location']['lat'], x['location']['lng']],
+                              radius=x['location']['radius_in_meters'],
+                              interactive=False)
+                    for x in all_locations]
+
+        return [dl.Circle(center=[x['location']['lat'], x['location']['lng']],
+                              radius=x['location']['radius_in_meters'],
+                              interactive=False)
+                    for x in filtered_locations]
+
     @dash_app.callback([Output('loc_friends_shared_with', 'options'),
                         Output('loc_friends_shared_with', 'value')],
-                       Input("store-current-location-data", "data"))
-    def show_friends_to_share_location(loc_data):
+                       Input("store-current-location-data", "data"),
+                       State('logged_in_username', 'data'))
+    def show_friends_to_share_location(loc_data, un):
 
         if loc_data is None:
             raise PreventUpdate
@@ -362,13 +417,12 @@ def register_callbacks(dash_app):
             opt_disabled = True
 
         shared_with = loc_data['Shared_with']
-        all_friends = get_my_friends()
+        all_friends = get_my_friends(user_id=un['un'])
 
         options = [{'label': x['username'], 'value': x['id'], 'disabled': opt_disabled} for x in all_friends]
         values = [x['id'] for x in shared_with]
 
         return options, values
-
 
     @dash_app.callback([Output('modify-loc-name', 'value'),
                         Output('modify-loc-information', 'value'),

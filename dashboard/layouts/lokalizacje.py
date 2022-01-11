@@ -8,6 +8,7 @@ MAP_STYLE = {'width': '100%', 'height': '25rem'}
 
 locations_map = dl.Map([
     dl.TileLayer(updateWhenZooming=False),
+    dl.GeoJSON(children=[], id='locations_circles'),
     dl.GeoJSON(data=[], id='locations_markers'),
     dl.LocateControl(options={'locateOptions'       : {'enableHighAccuracy': True},
                               'keepCurrentZoomLevel': True,
