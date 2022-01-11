@@ -13,6 +13,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 class DatabaseSessionManager:
     def __init__(self, db_engine):
+        self.db_engine = db_engine
         self.session = sessionmaker(bind=db_engine)
 
     def add_new_objects(self, objects: List):
@@ -20,6 +21,8 @@ class DatabaseSessionManager:
             for t in objects:
                 s.add(t)
             s.commit()
+
+        self.db_engine.dispose()
         return True
 
     def remove_objects(self, objects: List):
@@ -27,12 +30,16 @@ class DatabaseSessionManager:
             for t in objects:
                 s.delete(t)
             s.commit()
+
+        self.db_engine.dispose()
         return True
 
     def update_object(self, item_id, item_class, **kwargs):
         with self.session() as s:
             s.query(item_class).filter_by(id=item_id).update(dict(kwargs))
             s.commit()
+
+        self.db_engine.dispose()
         return True
 
     def fetch_objects(self, class_def, filters: Dict):
@@ -42,6 +49,7 @@ class DatabaseSessionManager:
             else:
                 results = s.query(class_def).all()
 
+        self.db_engine.dispose()
         return results
 
     def fetch_objects_data(self, class_def, filters: Dict):
@@ -51,6 +59,7 @@ class DatabaseSessionManager:
             else:
                 results = s.query(class_def).options(eagerload('*')).all()
 
+        self.db_engine.dispose()
         return results
 
 
@@ -202,6 +211,8 @@ class DatabaseFacade:
             user.loc_shared_with_me.append(location)
             s.add(user)
             s.commit()
+
+        self.session.db_engine.dispose()
         return True
 
     def delete_location_from_user(self, friend_id, location_id):
@@ -212,6 +223,8 @@ class DatabaseFacade:
                 user.loc_shared_with_me.remove(location)
                 s.add(user)
                 s.commit()
+
+        self.session.db_engine.dispose()
         return True
 
     def fetch_locations_data(self,
@@ -294,6 +307,8 @@ class DatabaseFacade:
             location.loc_mushrooms.append(mushroom)
             s.add(location)
             s.commit()
+        self.session.db_engine.dispose()
+        return True
 
 
 def upload_to_database():
@@ -378,6 +393,7 @@ def upload_to_database():
 
     # Wyswietlanie uzytkownikow
     db.users.fetch_all_users()
+
 
     # Wyswietlanie lokalizacje widoczne dla danego uzytkownika
     print(db.fetch_locations_data(owner_id=1))
