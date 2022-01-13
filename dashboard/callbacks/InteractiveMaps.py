@@ -13,6 +13,8 @@ from dash.exceptions import PreventUpdate
 import dash_leaflet.express as dlx
 
 from datetime import datetime
+from datetime import date
+
 from functools import lru_cache
 
 from dashboard.features.weather_api_featching import WeatherAPI
@@ -22,7 +24,6 @@ from database.DatabaseInterface import DatabaseSessionManager, DatabaseFacade
 from config import get_db_uri
 
 from sqlalchemy import create_engine
-
 
 
 weather_api = WeatherAPI(API_KEY='0e62530620448044eb4a76de6180486e')
@@ -37,20 +38,22 @@ def fetch_locations_data(owner_id):
     # Prepare connection to Database
     db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
 
-    return db.fetch_locations_data(owner_id=owner_id,
+    data = db.fetch_locations_data(owner_id=owner_id,
                                    shared_with_user_id=owner_id)
 
+    return data
 
-def fetch_mushrooms_availability():
+
+@lru_cache(maxsize=3, typed=True)
+def fetch_mushrooms_availability(today_month: str):
     # Prepare connection to Database
     db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
 
-    from datetime import date
-    today_month = str(date.today().month)
     dataset = {}
     for x in db.fetch_mushrooms_data():
         dataset[x['MushroomNameInFormal']] = x['MonthsAvailable'][today_month]
     return dataset
+
 
 # # TODO: pamiętaj o deduplikacji. Ta sama lokalizacja moze byc udostepniona i byc moja
 # def fetch_locations_data():
@@ -122,11 +125,12 @@ def render_geojson(data):
     return data
 
 
-def get_mushrooms_types(data):
+def get_mushrooms_types():
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
     typy_grzybow = []
-    for x in data:
-        typy_grzybow += x['Grzyby']
-    typy_grzybow = sorted(list(set(typy_grzybow)))
+    for x in db.fetch_mushrooms_data():
+        typy_grzybow.append(x['MushroomNameInFormal'])
     return typy_grzybow
 
 
@@ -188,8 +192,8 @@ def render_weather_tables(weather_forecast: List) -> List:
 def get_my_friends(user_id):
     db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
 
-    my_friends = db.friends.fetch_friends(filters=dict(friend1=user_id))
-    return [{'id': x.__dict__['id'], 'username': x.__dict__['friend2']} for x in my_friends]
+    my_friends = db.fetch_friends_ids(user_id=user_id)
+    return [{'id': x['id'], 'username': x['username']} for x in my_friends]
 
     # return [
     #     {'id': 1, 'username': 'user1'},
@@ -252,7 +256,7 @@ def register_callbacks(dash_app):
         trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
 
         if trigger == 'button-mark-sesonal-mushrooms':
-            seasonal_mushrooms_info = fetch_mushrooms_availability()
+            seasonal_mushrooms_info = fetch_mushrooms_availability(today_month=str(date.today().month))
             seasonal_mushrooms = [x[0] for x in seasonal_mushrooms_info.items() if x[1] is True]
             all_mushrooms = [x['value'] for x in mushrooms_options if x['value'] in seasonal_mushrooms]
             return no_update, all_mushrooms
@@ -301,7 +305,7 @@ def register_callbacks(dash_app):
         if all_locations is None:
             raise PreventUpdate
 
-        return [{'label': x, 'value': x} for x in get_mushrooms_types(all_locations)]
+        return [{'label': x, 'value': x} for x in get_mushrooms_types()]
 
     @dash_app.callback(Output("locations_filtered_number", "children"),
                        Input("store-filtered-locations-ids", "data"),
@@ -342,7 +346,7 @@ def register_callbacks(dash_app):
         if location_data is None:
             return None, None, None
 
-        seasonal_mushrooms = fetch_mushrooms_availability()
+        seasonal_mushrooms = fetch_mushrooms_availability(today_month=str(date.today().month))
 
         for key, value in seasonal_mushrooms.items():
             if value is True:
@@ -441,7 +445,7 @@ def register_callbacks(dash_app):
         if loc_data is None:
             raise PreventUpdate
 
-        all_mushrooms_opt = [{'value': x, 'label': x} for x in get_mushrooms_types(all_loc)]
+        all_mushrooms_opt = [{'value': x, 'label': x} for x in get_mushrooms_types()]
 
         return loc_data['Nazwa'], loc_data['Opis'], all_mushrooms_opt, loc_data['Grzyby']
 

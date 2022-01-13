@@ -82,9 +82,13 @@ def register_callbacks(dashapp):
 
     # ROUTING headera --------------------------------------------------------------
     @dashapp.callback(Output('header-content', 'children'),
-                      Input('url', 'pathname'))
-    def ustaw_header(url):
+                      Input('url', 'pathname'),
+                      State('logged_in_username', 'data'))
+    def ustaw_header(url, un):
         if url == '/profil-wyloguj':
+            return nav_header.navbar_niezalogowany
+
+        if un is None:
             return nav_header.navbar_niezalogowany
 
         if current_user.is_authenticated:
@@ -123,3 +127,8 @@ def register_callbacks(dashapp):
             return nav_logowanie.login
 
         return main_page.main_page
+
+    @dashapp.callback(Output('header-content', 'is_open'),
+                      Input('url', 'pathname'))
+    def display_page(pathname):
+        return False

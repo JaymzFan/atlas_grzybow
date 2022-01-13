@@ -17,6 +17,72 @@ from functools import lru_cache
 
 from dashboard.features.weather_api_featching import WeatherAPI
 
+
+from config import get_db_uri
+
+from sqlalchemy import create_engine
+
+from database.DatabaseInterface import DatabaseSessionManager, DatabaseFacade
+
+
+def modify_existing_location(loc_id: int, params, mush_informal_names):
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
+    db.locations.update_location(object_id=loc_id, **params)
+
+    # get mushrooms ids
+    mush_ids = []
+    for x in mush_informal_names[0]:
+        grzyb = db.mushrooms.fetch_all_mushrooms(filters=dict(nazwa_nieformalna=x))
+        mush_ids.append(grzyb[0].__dict__['id'])
+
+    db.set_mushrooms_to_location(location_id=loc_id, mushroom_ids=mush_ids)
+    return True
+
+
+def delete_existing_location(loc_id: int):
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
+    #removing mushrooms association and assigned shared friends
+    db.set_mushrooms_to_location(location_id=loc_id, mushroom_ids=[])
+    set_shared_with_to_location(loc_id=loc_id, friends_ids=[])
+
+    loc_to_remove = db.locations.fetch_all_locations(filters=dict(id=loc_id))
+    db.locations.session.remove_objects(objects=loc_to_remove)
+
+    return True
+
+
+def set_shared_with_to_location(loc_id, friends_ids):
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
+    db.set_shared_with_to_location(location_id=loc_id, friends_ids=friends_ids)
+    return True
+
+
+def get_mushrooms_by_names(mushrooms_informal_names):
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
+    all_mushrooms = []
+    for mush in mushrooms_informal_names:
+        mushroom = db.mushrooms.fetch_all_mushrooms(filters=dict(nazwa_nieformalna=mush))[0]
+        all_mushrooms.append(mushroom)
+
+    return all_mushrooms
+
+def add_new_location(owner_id, nazwa, opis, center_lat, center_lon, radius_in_meters, mushrooms_names):
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
+    all_mushrooms = db.mushrooms.fetch_all_mushrooms()
+
+    db.locations.add_location(owner_id=owner_id,
+                              nazwa=nazwa, opis=opis, center_lat=center_lat, center_lon=center_lon,
+                              radius_in_meters=radius_in_meters, loc_mushrooms=all_mushrooms,
+                              czy_publiczna=0)
+
+    return True
+
+
 def fetch_locations_data():
     demo_data = [
         {
@@ -64,11 +130,13 @@ def fetch_locations_data():
     return demo_data
 
 
-def get_mushrooms_types(data):
+def get_mushrooms_types():
+    db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
+
     typy_grzybow = []
-    for x in data:
-        typy_grzybow += x['Grzyby']
-    typy_grzybow = sorted(list(set(typy_grzybow)))
+    for x in db.fetch_mushrooms_data():
+        typy_grzybow.append(x['MushroomNameInFormal'])
+
     return typy_grzybow
 
 
@@ -86,210 +154,77 @@ def register_callbacks(dash_app):
         if click_lat_lng is None:
             raise PreventUpdate
         click_lat_lng = [round(x, ndigits=1) for x in click_lat_lng]
-        print(str(click_lat_lng))
         return str(click_lat_lng)
 
-    #
-    # @dash_app.callback(Output('weather_forecast_placeholder', 'children'),
-    #                    [Input('store-current-location-data', 'data')])
-    # def get_weather_forecast2(curr_data):
-    #     if curr_data is None:
-    #         raise PreventUpdate
-    #
-    #     click_lat_lng = [round(x, ndigits=1) for x in [curr_data['location']['lat'],
-    #                                                    curr_data['location']['lng']]]
-    #     today_date = datetime.now().date()
-    #
-    #     pogoda_teraz = fetch_weather(today=today_date,
-    #                                  lat=click_lat_lng[0],
-    #                                  lon=click_lat_lng[1])
-    #
-    #     return render_weather_tables(weather_forecast=pogoda_teraz)
-    #
-    # @dash_app.callback(Output("locations_filters", "is_open"),
-    #                    Input('locations_show_filters', 'n_clicks'),
-    #                    State("locations_filters", "is_open"))
-    # def pokaz_filtry(n_clicks, is_open):
-    #     if n_clicks:
-    #         return not is_open
-    #
-    #     return is_open
-    #
-    # @dash_app.callback([Output("locations_filters_loctypes", "value"),
-    #                     Output('locations_filters_mushroomtypes', 'value')],
-    #                    Input('locations_clear_filters', 'n_clicks'),
-    #                    [State("locations_filters_loctypes", "options")])
-    # def wyczysc_filtry(n_clicks, location_types):
-    #     if n_clicks == 0:
-    #         raise PreventUpdate
-    #     all_values = [x['value'] for x in location_types]
-    #     return list(set(all_values)), []
-    #
-    @dash_app.callback(Output("store-all-locations-addnew-data", "data"),
+    @dash_app.callback(Output('loc_add_new_locations_alert', 'is_open'),
+                       Input('button-addnew-loc-submit', 'n_clicks'),
+                       [State('addnew-loc-mushrooms-list', 'value'),
+                        State('addnew-loc-information', 'value'),
+                        State("addnew-loc-name", 'value'),
+                        State('add-new-location-map', 'click_lat_lng'),
+                        State('logged_in_username', 'data'),
+                        State("loc-addnew-radius-in-meters", 'value')])
+    def addnew_location_to_database(n_clicks, mushrooms_names, loc_opis, loc_nazwa,
+                                    loc_center, loggedin_user, radius
+                                    ):
+
+        if n_clicks == 0:
+            raise PreventUpdate
+
+        add_new_location(owner_id=loggedin_user['id'],
+                         nazwa=loc_nazwa,
+                         opis=loc_opis,
+                         center_lon=loc_center[1],
+                         center_lat=loc_center[0],
+                         radius_in_meters=radius,
+                         mushrooms_names=mushrooms_names)
+
+        return True
+
+    @dash_app.callback(Output("addnew-loc-mushrooms-list", "options"),
                        Input('url', 'pathname'))
-    def load_locations_data(url):
+    def add_new_loc_mushrooms_options(url):
         if url != '/lokalizacje-modyfikuj':
             raise PreventUpdate
 
-        return fetch_locations_data()
-    #
-    # @dash_app.callback(Output("store-filtered-locations-ids", "data"),
-    #                    Input('locations_apply_filters', 'n_clicks'),
-    #                    Input('locations_clear_filters', 'n_clicks'),
-    #                    [State("locations_filters_loctypes", "value"),
-    #                     State('locations_filters_mushroomtypes', 'value'),
-    #                     State('store-all-locations-data', 'data')])
-    # def filter_locations(n_clicks, n_clics_clear, loc_types, mushroom_types, all_locations):
-    #     if n_clicks == 0 or n_clics_clear == 0:
-    #         raise PreventUpdate
-    #
-    #     if all_locations is None:
-    #         raise PreventUpdate
-    #
-    #     # filter by location type
-    #     filt_loc = [x for x in all_locations
-    #                 if x['prywatnosc'] in loc_types]
-    #
-    #     # filter by mushrooms
-    #     # all locations in which at least one mushroom from the list is available
-    #     if mushroom_types:
-    #         filt_loc = [
-    #             x for x in filt_loc if any(y in mushroom_types for y in x['Grzyby'])
-    #         ]
-    #
-    #     return filt_loc
-    #
-    @dash_app.callback(Output("addnew-loc-mushrooms-list", "options"),
-                       Input('store-all-locations-addnew-data', 'data'))
-    def add_new_loc_mushrooms(all_locations):
-        if all_locations is None:
+        return [{'label': x, 'value': x} for x in get_mushrooms_types()]
+
+    @dash_app.callback(Output('loc_modify_data_alert', 'is_open'),
+                       Input("button-modify-loc-submit", 'n_clicks'),
+                       [State('store-current-location-data', 'data'),
+                        State('modify-loc-mushrooms-list', 'value'),
+                        State('modify-loc-information', 'value'),
+                        State('modify-loc-name', 'value')])
+    def popup_alert_modification_successful(n_clicks, curr_loc_data, mushrooms, opis, nazwa):
+        if n_clicks == 0:
+            raise PreventUpdate
+        curr_loc_id = curr_loc_data['id']
+
+        modify_existing_location(loc_id=curr_loc_id, params=dict(nazwa=nazwa, opis=opis),
+                                 mush_informal_names=[mushrooms])
+        return True
+
+    @dash_app.callback(Output('loc_delete_locations_alert', 'is_open'),
+                       Input("button-delete-loc-submit", 'n_clicks'),
+                       [State('store-current-location-data', 'data')])
+    def popup_alert_delete_successful(n_clicks, curr_loc_data):
+        if n_clicks == 0:
+            raise PreventUpdate
+        curr_loc_id = curr_loc_data['id']
+
+        delete_existing_location(loc_id=curr_loc_id)
+        return True
+
+    @dash_app.callback(Output('alert-setting-ppl-to-share-loc', 'is_open'),
+                       Input("button-save-loc-sharing", 'n_clicks'),
+                       [State('loc_friends_shared_with', 'value'),
+                        State('store-current-location-data', 'data')])
+    def set_to_whom_curr_locations_should_be_shared(n_clicks, friends_to_share_with, curr_loc):
+        if n_clicks == 0:
+            raise PreventUpdate
+        if curr_loc is None:
             raise PreventUpdate
 
-        return [{'label': x, 'value': x} for x in get_mushrooms_types(all_locations)]
-    #
-    # @dash_app.callback(Output("locations_filtered_number", "children"),
-    #                    Input("store-filtered-locations-ids", "data"),
-    #                    Input("locations_clear_filters", "n_clicks"),
-    #                    State('store-all-locations-data', 'data'))
-    # def print_number_of_filtered_locations(filtered_locations, n_clicks, all_locations):
-    #
-    #     # determining which button was pushed
-    #     trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
-    #
-    #     if trigger == 'locations_clear_filters' and all_locations is not None:
-    #         return f"Znalezionych: {len(all_locations)}"
-    #
-    #     if filtered_locations is None:
-    #         if all_locations is not None:
-    #             return f"Znalezionych: {len(all_locations)}"
-    #         raise PreventUpdate
-    #
-    #     return f"Znalezionych: {len(filtered_locations)}"
-    #
-    # @dash_app.callback(Output("store-current-location-data", "data"),
-    #                    Input('locations_markers', 'click_feature'),
-    #                    State("store-all-locations-data", "data"))
-    # def load_current_locations_data(clicked_loc, all_locations):
-    #     if clicked_loc is None:
-    #         return None
-    #
-    #     picked_location_id = clicked_loc['properties']['id_lokalizacji']
-    #     curr_location_data = [x for x in all_locations if x['id'] == picked_location_id]
-    #
-    #     return curr_location_data[0]
-    #
-    # @dash_app.callback([Output("clicked_loc_name", 'children'),
-    #                     Output('clicked_loc_info', 'children'),
-    #                     Output('clicked_loc_mushrooms', 'children')],
-    #                    Input("store-current-location-data", "data"))
-    # def load_current_location_card(location_data):
-    #     if location_data is None:
-    #         return None, None, None
-    #
-    #     mushrooms_list = [dbc.ListGroupItem(x) for x in location_data['Grzyby']]
-    #
-    #     return location_data['Nazwa'], location_data['Opis'], mushrooms_list
-    #
-    # @dash_app.callback(Output("locations_markers", "data"),
-    #                    [Input("locations_clear_filters", "n_clicks"),
-    #                    Input("store-filtered-locations-ids", "data")],
-    #                    Input("store-all-locations-data", "data"))
-    # def render_filtered_locations(n_clicks, filtered_locations, all_locations):
-    #
-    #     # determining which button was pushed
-    #     trigger = callback_context.triggered[0]["prop_id"].split(".")[0]
-    #
-    #     if trigger == 'locations_clear_filters' and all_locations is not None:
-    #         return dlx.dicts_to_geojson(render_geojson(data=all_locations))
-    #
-    #     if filtered_locations is None:
-    #         if all_locations is None:
-    #             raise PreventUpdate
-    #         return dlx.dicts_to_geojson(render_geojson(data=all_locations))
-    #
-    #     return dlx.dicts_to_geojson(render_geojson(data=filtered_locations))
-    #
-    # @dash_app.callback([Output('loc_friends_shared_with', 'options'),
-    #                     Output('loc_friends_shared_with', 'value')],
-    #                    Input("store-current-location-data", "data"))
-    # def show_friends_to_share_location(loc_data):
-    #
-    #     if loc_data is None:
-    #         raise PreventUpdate
-    #
-    #     if loc_data['prywatnosc'] == 'my_location':
-    #         opt_disabled = False
-    #     else:
-    #         opt_disabled = True
-    #
-    #     shared_with = loc_data['Shared_with']
-    #     all_friends = get_my_friends()
-    #
-    #     options = [{'label': x['username'], 'value': x['id'], 'disabled': opt_disabled} for x in all_friends]
-    #     values = [x['id'] for x in shared_with]
-    #
-    #     return options, values
-    #
-    #
-    # @dash_app.callback([Output('modify-loc-name', 'value'),
-    #                     Output('modify-loc-information', 'value'),
-    #                     Output('modify-loc-mushrooms-list', 'options'),
-    #                     Output('modify-loc-mushrooms-list', 'value')],
-    #                    Input("store-current-location-data", "data"),
-    #                    State('store-all-locations-data', 'data'))
-    # def modify_location(loc_data, all_loc):
-    #
-    #     if loc_data is None:
-    #         raise PreventUpdate
-    #
-    #     all_mushrooms_opt = [{'value': x, 'label': x} for x in get_mushrooms_types(all_loc)]
-    #
-    #     return loc_data['Nazwa'], loc_data['Opis'], all_mushrooms_opt, loc_data['Grzyby']
-    #
-    # @dash_app.callback(Output('modify-loc-tab', 'disabled'),
-    #                    Input("store-current-location-data", "data"))
-    # def hide_modification_tab(loc_data):
-    #     if loc_data is None:
-    #         return True
-    #
-    #     if loc_data['prywatnosc'] == 'my_location':
-    #         return False
-    #
-    #     return True
-    #
-    # @dash_app.callback([Output('button-modify-loc-submit', 'disabled'),
-    #                     Output('button-save-loc-sharing', 'disabled')],
-    #                    Input("store-current-location-data", "data"))
-    # def disable_modify_button(loc_data):
-    #     if loc_data is None:
-    #         return True, True
-    #
-    #     if loc_data['prywatnosc'] == 'my_location':
-    #         return False, False
-    #
-    #     return True, True
-    #
-    # @dash_app.callback(Output('location_info_tabs', 'active_tab'),
-    #                    Input("store-current-location-data", "data"))
-    # def always_activate_info_tab(loc_data):
-    #     return 0
+        curr_loc_id = curr_loc['id']
+        set_shared_with_to_location(loc_id=curr_loc_id, friends_ids=friends_to_share_with)
+        return True

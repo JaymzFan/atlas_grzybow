@@ -55,9 +55,25 @@ modify_loc_card = dbc.Form([
                    style={'margin-top': '2rem'})
     ]),
     dbc.Row([
+        dbc.Alert('Dane lokalizacji zostały zaktualizowane',
+                  id='loc_modify_data_alert',
+                  fade=True,
+                  dismissable=True,
+                  is_open=False,
+                  duration=3000)
+    ]),
+    dbc.Row([
         dbc.Button("Usuń lokalizację", color='danger', id='button-delete-loc-submit', n_clicks=0,
                    style={'margin-top': '2rem'})
-    ])
+    ]),
+    dbc.Row([
+        dbc.Alert('Lokalizacja została usunięta z bazy danych',
+                  id='loc_delete_locations_alert',
+                  fade=True,
+                  dismissable=True,
+                  is_open=False,
+                  duration=3000)
+    ]),
 ])
 
 
@@ -119,33 +135,36 @@ main_page = dbc.Container([
     dcc.Store(id='store-all-locations-data'),
     dcc.Store(id='store-filtered-locations-ids'),
     dcc.Store(id='store-current-location-data'),
-    dbc.Row(dbc.Col(html.Div([locations_map]))),
-    dbc.Row(dbc.Button('Pokaż filtry lokalizacji', id='locations_show_filters')),
+    dbc.Row(dbc.Col(html.Div([locations_map]), xl=8, lg=8, md=12, sm=12), justify="center"),
+    dbc.Row(dbc.Col(dbc.Button('Pokaż filtry lokalizacji', id='locations_show_filters', style={'width': "100%"}), xl=8, lg=8, md=12, sm=12), justify="center"),
     filtry_canvas,
-    dbc.Accordion([
-        dbc.AccordionItem([
-            dbc.Tabs([
-                dbc.Tab(clicked_loc_card,
-                        label='Info',
-                        active_tab_style={"textTransform": "uppercase"}),
-                dbc.Tab(modify_loc_card,
-                        label='Modyfikuj',
-                        active_tab_style={"textTransform": "uppercase"},
-                        id='modify-loc-tab'),
-            ])
-        ], title="Informacje o lokalizacji", id='location_info_tabs'),
-        dbc.AccordionItem([
-            dbc.Row(id='weather_forecast_placeholder')
-        ], title="Prognoza pogody"),
-        dbc.AccordionItem([
-            dbc.Row(dbc.Col(dbc.Button('Zapisz zmiany', id='button-save-loc-sharing'))),
-            dbc.Checklist(
-                id='loc_friends_shared_with',
-                options=[],
-                value=[], labelStyle={"display": "block"}
-            )
-        ], title="Udostępnij znajomym")
-    ], start_collapsed=True),
+    dbc.Row(dbc.Col([
+        dbc.Accordion([
+            dbc.AccordionItem([
+                dbc.Tabs([
+                    dbc.Tab(clicked_loc_card,
+                            label='Info',
+                            active_tab_style={"textTransform": "uppercase"}),
+                    dbc.Tab(modify_loc_card,
+                            label='Modyfikuj',
+                            active_tab_style={"textTransform": "uppercase"},
+                            id='modify-loc-tab'),
+                ])
+            ], title="Informacje o lokalizacji", id='location_info_tabs'),
+            dbc.AccordionItem([
+                dbc.Row(id='weather_forecast_placeholder')
+            ], title="Prognoza pogody"),
+            dbc.AccordionItem([
+                dbc.Row(dbc.Col(dbc.Button('Zapisz zmiany', id='button-save-loc-sharing'))),
+                dbc.Row(dbc.Col(dbc.Alert("Zmiany zostały zapisane", id='alert-setting-ppl-to-share-loc', is_open=False, duration=3000))),
+                dbc.Checklist(
+                        id='loc_friends_shared_with',
+                        options=[],
+                        value=[], labelStyle={"display": "block"}
+                )
+            ], title="Udostępnij znajomym")
+        ], start_collapsed=True)
+    ], xl=8, lg=8, md=12, sm=12), justify="center"),
 ], fluid=True)
 
 
@@ -154,6 +173,10 @@ add_new_loc_card = dbc.Form([
         dbc.Label("Położenie"),
         dbc.Col([
         ], id='add_new_loc_info')
+    ], className="mb-3"),
+    dbc.Row([
+        dbc.Label("Promień obszaru w metrach"),
+        dbc.Col([dbc.Input(type='number', id='loc-addnew-radius-in-meters')])
     ], className="mb-3"),
     dbc.Row([
         dbc.Label("Nazwa"),
@@ -180,7 +203,15 @@ add_new_loc_card = dbc.Form([
     ]),
     dbc.Row([
         dbc.Button("Zapisz", id='button-addnew-loc-submit', n_clicks=0)
-    ])
+    ]),
+    dbc.Row([
+        dbc.Alert('Lokalizacja została dodana do bazy danych',
+                  id='loc_add_new_locations_alert',
+                  fade=True,
+                  dismissable=True,
+                  is_open=False,
+                  duration=3000)
+    ]),
 ])
 
 add_new_locations_map = dl.Map([
@@ -192,7 +223,6 @@ add_new_locations_map = dl.Map([
             ], id='add-new-location-map', center=[52.15, 19.7], style=MAP_STYLE)
 
 manage = dbc.Container([
-    dcc.Store(id='store-all-locations-addnew-data'),
     dbc.Row(dbc.Col([
         add_new_locations_map
     ], width=12, align='center')),

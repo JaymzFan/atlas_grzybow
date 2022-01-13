@@ -13,15 +13,7 @@ navbar_zalogowany = dbc.NavbarSimple(
                 label="Lokalizacje"
         ),
         dbc.NavItem(dbc.NavLink("Grzyby", href="grzyby-przegladaj#")),
-        dbc.DropdownMenu(
-            children=[
-                dbc.DropdownMenuItem("Szczegóły", href='profil-szczegoly#'),
-                dbc.DropdownMenuItem("Znajomi", href="profil-znajomi#"),
-            ],
-            nav=True,
-            in_navbar=True,
-            label="Mój Profil",
-        ),
+        dbc.NavItem(dbc.NavLink("Znajomi", href="profil-znajomi#")),
         dbc.NavItem(children=[dbc.NavLink("Wyloguj", href='profil-wyloguj#', external_link=True)])
     ],
     brand="Atlas Grzybów",
@@ -32,7 +24,7 @@ navbar_zalogowany = dbc.NavbarSimple(
     fluid=True,
     links_left=True,
     expand='lg',
-    sticky='top'
+    sticky='top', id='navbar_zalogowany'
 )
 
 

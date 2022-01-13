@@ -44,7 +44,7 @@ main_page = dbc.Container([
     dcc.Store(id='mushrooms_viewer_current_view'),
 
     dbc.Row([
-        dbc.Col([dropdown_options], xl=4, lg=6, md=12, sm=12)
+        dbc.Col([dropdown_options], xl=8, lg=8, md=12, sm=12)
     ], style={"margin": '1rem'}, className="g-0", justify="center",),
     dbc.Row([
         dbc.Col([
@@ -57,6 +57,6 @@ main_page = dbc.Container([
     dbc.Row([
         dbc.Col([
             mushroom_card
-        ], xl=4, lg=4)
+        ], xl=8, lg=8, md=12, sm=12)
     ], justify="center",)
 ], fluid=True)

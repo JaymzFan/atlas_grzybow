@@ -31,14 +31,14 @@ class Friend(Base):
 
 locations_mushrooms = Table(
         'locations_mushrooms', Base.metadata,
-        Column('id_location', ForeignKey('locations.id'), primary_key=True),
-        Column('id_mushroom', ForeignKey('mushrooms.id'), primary_key=True))
+        Column('id_location', ForeignKey('locations.id', ondelete='CASCADE'), primary_key=True),
+        Column('id_mushroom', ForeignKey('mushrooms.id', ondelete='CASCADE'), primary_key=True))
 
 
 shared_locations = Table(
         'shared_locations', Base.metadata,
-        Column('id_location', ForeignKey('locations.id'), primary_key=True),
-        Column('friend_id', ForeignKey('users.id'), primary_key=True))
+        Column('id_location', ForeignKey('locations.id', ondelete='CASCADE'), primary_key=True),
+        Column('friend_id', ForeignKey('users.id', ondelete='CASCADE'), primary_key=True))
 
 User.loc_shared_with_me = relationship("Location", secondary=shared_locations, backref='user')
 
@@ -56,8 +56,8 @@ class Location(Base):
     czy_publiczna = Column(Boolean(create_constraint=True))
 
     owner = relationship('User', backref='locations')
-    loc_mushrooms = relationship('Mushroom', secondary=locations_mushrooms, backref='locations')
-    shared_with = relationship("User", secondary=shared_locations, backref='locations2')
+    loc_mushrooms = relationship('Mushroom', secondary=locations_mushrooms, backref='locations', cascade="all, delete")
+    shared_with = relationship("User", secondary=shared_locations, backref='locations2', cascade="all, delete")
 
     def __repr__(self):
         return f'Location {self.id}, name {self.nazwa}'
@@ -92,7 +92,7 @@ class Mushroom(Base):
     czy_jadalny = Column(Boolean(create_constraint=True))
     czy_chroniony = Column(Boolean(create_constraint=True))
 
-    mush_locations = relationship('Location', secondary=locations_mushrooms, backref='mushrooms')
+    mush_locations = relationship('Location', secondary=locations_mushrooms, backref='mushrooms', passive_deletes=True)
 
     def __repr__(self):
         return f'Mushroom {self.id}, name {self.nazwa_formalna}'

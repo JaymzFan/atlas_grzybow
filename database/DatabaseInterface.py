@@ -42,6 +42,28 @@ class DatabaseSessionManager:
         self.db_engine.dispose()
         return True
 
+    def update_objects_relationship(self, item_id, item_class, **kwargs):
+        with self.session() as s:
+            print("A")
+
+            item = s.query(item_class).filter_by(id=item_id).options(eagerload("*")).one()
+            print(item)
+            print("B")
+            for key, value in kwargs.items():
+                print("C")
+                print(value)
+                print(key)
+                item.loc_mushrooms = value
+                print("D")
+            #
+            # for v in value:
+            #     item.loc_mushrooms.append(v)
+            #     setattr(item, 'loc_mushroomskey', v)
+            s.commit()
+
+        self.db_engine.dispose()
+        return True
+
     def fetch_objects(self, class_def, filters: Dict):
         with self.session() as s:
             if filters:
@@ -94,6 +116,7 @@ class LocationsManager:
 
     def remove_location(self, object_id):
         obj_to_remove = self.session.fetch_objects(class_def=self._loc_class, filters={"id": object_id})
+        print(obj_to_remove)
         self.session.remove_objects(objects=obj_to_remove)
         return True
 
@@ -204,6 +227,19 @@ class DatabaseFacade:
         self.mushrooms = MushroomsManager(session_manager=session_manager)
         self.friends = FriendsManager(session_manager=session_manager)
 
+    def set_shared_with_to_location(self, location_id, friends_ids):
+        with self.session.session() as s:
+            location = s.query(self.locations.this_class).filter_by(id=location_id).one()
+            location.shared_with = []
+            for us in friends_ids:
+                print(us)
+                us_object = s.query(self.users.this_class).filter_by(id=us).one()
+                location.shared_with.append(us_object)
+            s.add(location)
+            s.commit()
+        self.session.db_engine.dispose()
+        return True
+
     def append_location_to_user(self, friend_id, location_id):
         with self.session.session() as s:
             location = s.query(self.locations.this_class).filter_by(id=location_id).one()
@@ -247,11 +283,10 @@ class DatabaseFacade:
                             if shared_with_user_id in [_.__dict__['id'] for _ in x.__dict__['shared_with']]]
 
         # concatenate locations and reformat them
-        i = public_locations[0]
         returned_locs = {}
-        for privacy, i in list(zip_longest([], public_locations, fillvalue='public')) + \
-                          list(zip_longest([], owner_locations, fillvalue='my_location')) + \
-                          list(zip_longest([], shared_locations, fillvalue='shared_with_me')):
+        for privacy, i in list(zip_longest([], shared_locations, fillvalue='shared_with_me')) + \
+                          list(zip_longest([], public_locations, fillvalue='public')) + \
+                          list(zip_longest([], owner_locations, fillvalue='my_location')):
             loc_data = i.__dict__
             returned_locs[str(loc_data['id'])] = {
                 'id': loc_data['id'],
@@ -300,16 +335,37 @@ class DatabaseFacade:
             })
         return all_mushrooms_data
 
-    def append_mushroom_to_location(self, location_id, mushroom_id):
+    def set_mushrooms_to_location(self, location_id, mushroom_ids, mushroom_informalnames=None):
         with self.session.session() as s:
             location = s.query(self.locations.this_class).filter_by(id=location_id).one()
-            mushroom = s.query(self.mushrooms.this_class).filter_by(id=mushroom_id).one()
-            location.loc_mushrooms.append(mushroom)
+            location.loc_mushrooms = []
+            for mush in mushroom_ids:
+                mushroom = s.query(self.mushrooms.this_class).filter_by(id=mush).one()
+                location.loc_mushrooms.append(mushroom)
+
+            if mushroom_informalnames:
+                for mush in mushroom_informalnames:
+                    mushroom = s.query(self.mushrooms.this_class).filter_by(nazwa_nieformalna=mush).one()
+                    location.loc_mushrooms.append(mushroom)
+
             s.add(location)
             s.commit()
         self.session.db_engine.dispose()
         return True
 
+    def fetch_friends_ids(self, user_id):
+
+        my_friends_usernames = self.friends.fetch_friends(filters=dict(friend1=user_id))
+        my_friends_usernames = [x.__dict__['friend2'] for x in my_friends_usernames]
+
+        my_friends_ids = []
+        if my_friends_usernames:
+            for un in my_friends_usernames:
+                my_friends_ids.append({
+                    'username': un,
+                    'id': self.users.fetch_all_users(filters=dict(username=un))[0].__dict__['id']
+                })
+        return my_friends_ids
 
 def upload_to_database():
     import pandas as pd
@@ -333,6 +389,7 @@ def upload_to_database():
     db.friends.add_friend(**dict(friend1='admin', friend2='user1'))
     db.friends.add_friend(**dict(friend1='user1', friend2='user3'))
 
+    # wyświetlnaie znajomych
     a = db.friends.fetch_friends(filters=dict(friend1='admin'))
     a = [{'id': x.__dict__['id'], 'username': x.__dict__['friend2']} for x in a]
 
@@ -341,29 +398,29 @@ def upload_to_database():
     lokalizacje = pd.read_excel('database/datafeed/datafeed.xlsx', keep_default_na=False, sheet_name='Lokalizacje')
     lokalizacje = lokalizacje.loc[lokalizacje['nazwa'] != ""]
 
-    cechy_grzybow = [
-        "nazwa_formalna",
-        "nazwa_nieformalna",
-        "photos_json",
-        "opis_cech_json",
-        "warunki_wystepowania_json",
-        "opis_objawow_zatrucia_json",
-        "wystepuje_miesiac_01",
-        "wystepuje_miesiac_02",
-        "wystepuje_miesiac_03",
-        "wystepuje_miesiac_04",
-        "wystepuje_miesiac_05",
-        "wystepuje_miesiac_06",
-        "wystepuje_miesiac_07",
-        "wystepuje_miesiac_08",
-        "wystepuje_miesiac_09",
-        "wystepuje_miesiac_10",
-        "wystepuje_miesiac_11",
-        "wystepuje_miesiac_12",
-        "czy_trujacy",
-        "czy_jadalny",
-        "czy_chroniony"
-    ]
+    # cechy_grzybow = [
+    #     "nazwa_formalna",
+    #     "nazwa_nieformalna",
+    #     "photos_json",
+    #     "opis_cech_json",
+    #     "warunki_wystepowania_json",
+    #     "opis_objawow_zatrucia_json",
+    #     "wystepuje_miesiac_01",
+    #     "wystepuje_miesiac_02",
+    #     "wystepuje_miesiac_03",
+    #     "wystepuje_miesiac_04",
+    #     "wystepuje_miesiac_05",
+    #     "wystepuje_miesiac_06",
+    #     "wystepuje_miesiac_07",
+    #     "wystepuje_miesiac_08",
+    #     "wystepuje_miesiac_09",
+    #     "wystepuje_miesiac_10",
+    #     "wystepuje_miesiac_11",
+    #     "wystepuje_miesiac_12",
+    #     "czy_trujacy",
+    #     "czy_jadalny",
+    #     "czy_chroniony"
+    # ]
     for i in ["nazwa_formalna",  "nazwa_nieformalna"]:
         grzyby[i] = grzyby[[i]].apply(lambda x: x.str.strip())
 
@@ -371,9 +428,19 @@ def upload_to_database():
         db.mushrooms.add_new_mushroom(**grzyb.to_dict())
 
     # Sprawdzanie grzybów
-    wszystkie_grzyby = db.fetch_mushrooms_data(imgs_folder_path='./static/images_mushrooms/')
+    # wszystkie_grzyby = db.fetch_mushrooms_data(imgs_folder_path='./static/images_mushrooms/')
+    # mushrooms = db.mushrooms.fetch_all_mushrooms()
 
     # Dodawanie lokalizacji
+    # db.locations.add_location(nazwa='NowaLokalizacja1', loc_mushrooms=[mushrooms[0]])
+
+    # db.set_mushrooms_to_location(location_id=1, mushroom_ids=[1, 2]) # DZIAłA !!!
+    # db.set_mushrooms_to_location(location_id=1, mushroom_ids=[]) # DZIAłA !!!
+
+    # Usuwanie lokalizacji !!! dziaŁA !!!
+    locs = db.locations.fetch_all_locations()
+    db.locations.session.remove_objects(objects=locs)
+
     for _, loc in lokalizacje.iterrows():
 
         # znajdujemy grzyby z danej lokalizacji
@@ -388,12 +455,15 @@ def upload_to_database():
         db.locations.add_location(**loc)
         curr_loc = db.locations.fetch_all_locations(filters={'nazwa': loc['nazwa']})
         curr_loc_id = curr_loc[0].__dict__['id']
-        for i in grzyby_lokalizacji:
-            db.append_mushroom_to_location(location_id=curr_loc_id, mushroom_id=i.__dict__['id'])
+        grzyby_lokalizacji = [x.__dict__['id'] for x in grzyby_lokalizacji]
+        db.set_mushrooms_to_location(location_id=curr_loc_id, mushroom_ids=grzyby_lokalizacji)
+
+    # Modyfikacja lokalizacji
+    # db.locations.update_location(object_id=2, opis="SuperOpis")
+    #db.append_mushroom_to_location(location_id=2, mushroom_id=2)
 
     # Wyswietlanie uzytkownikow
     db.users.fetch_all_users()
-
 
     # Wyswietlanie lokalizacje widoczne dla danego uzytkownika
     print(db.fetch_locations_data(owner_id=1))
@@ -413,6 +483,8 @@ def upload_to_database():
     fetch_mushrooms_availability(all_mushrooms_data=all_mushrooms_data)
 
     # Sharowanie lokalizacji z innym uzytkownikiem
+    # db.set_shared_with_to_location(location_id=2, friends_ids=[])
+
     friend1 = db.users.fetch_all_users(filters=dict(id=2))
     db.append_location_to_user(friend_id=2, location_id=1)
 
