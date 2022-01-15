@@ -1,5 +1,4 @@
 from flask_login import UserMixin
-from sqlalchemy import Table
 
 from dashboard.extensions import db
 from dashboard.extensions import login

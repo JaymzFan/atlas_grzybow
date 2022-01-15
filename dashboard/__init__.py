@@ -1,8 +1,6 @@
 import dash
 from flask import Flask
 
-import dash_bootstrap_components as dbc
-
 from config import Config
 
 
@@ -24,18 +22,13 @@ def register_dashapps(app):
     from dashboard.callbacks.MushroomsPage import register_callbacks as rc_mushrooms
     from dashboard.callbacks.ProfileManagement import register_callbacks as rc_profile
 
-    dashapp = dash.Dash(__name__,
-                        server=app,
-                        url_base_pathname='/',
-                        external_stylesheets=['/assets/bootstrap.min.css'], #[dbc.themes.DARKLY],
-                        suppress_callback_exceptions=True,
-                        # meta_tags=[
-                        #     {
-                        #         "name"   : "viewport",
-                        #         "content": "width=device-width, initial-scale=1, maximum-scale=1",
-                        #     },
-                        # ]
-                        )
+    dashapp = dash.Dash(
+        __name__,
+        server=app,
+        url_base_pathname="/",
+        external_stylesheets=["/assets/bootstrap.min.css"],
+        suppress_callback_exceptions=True
+    )
 
     with app.app_context():
         dashapp.title = Config.APP_TITLE

@@ -1,11 +1,20 @@
-from sqlalchemy import Table, Column, Float, Numeric, Integer, String, ForeignKey, Boolean
+from sqlalchemy import (
+    Table,
+    Column,
+    Float,
+    Numeric,
+    Integer,
+    String,
+    ForeignKey,
+    Boolean,
+)
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
     username = Column(String(30), unique=True, nullable=False)
@@ -15,36 +24,48 @@ class User(Base):
     nazwisko = Column(String, nullable=True)
 
     def __repr__(self):
-        return f'User {self.id}, {self.username}, {self.email}'
+        return f"User {self.id}, {self.username}, {self.email}"
 
 
 class Friend(Base):
-    __tablename__ = 'friends'
+    __tablename__ = "friends"
 
     id = Column(Integer, primary_key=True)
     friend1 = Column(String(30))
     friend2 = Column(String(30))
 
     def __repr__(self):
-        return f'friend1 {self.friend1}, friend2 {self.friend2}'
+        return f"friend1 {self.friend1}, friend2 {self.friend2}"
 
 
 locations_mushrooms = Table(
-        'locations_mushrooms', Base.metadata,
-        Column('id_location', ForeignKey('locations.id', ondelete='CASCADE'), primary_key=True),
-        Column('id_mushroom', ForeignKey('mushrooms.id', ondelete='CASCADE'), primary_key=True))
+    "locations_mushrooms",
+    Base.metadata,
+    Column(
+        "id_location", ForeignKey("locations.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "id_mushroom", ForeignKey("mushrooms.id", ondelete="CASCADE"), primary_key=True
+    ),
+)
 
 
 shared_locations = Table(
-        'shared_locations', Base.metadata,
-        Column('id_location', ForeignKey('locations.id', ondelete='CASCADE'), primary_key=True),
-        Column('friend_id', ForeignKey('users.id', ondelete='CASCADE'), primary_key=True))
+    "shared_locations",
+    Base.metadata,
+    Column(
+        "id_location", ForeignKey("locations.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column("friend_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+)
 
-User.loc_shared_with_me = relationship("Location", secondary=shared_locations, backref='user')
+User.loc_shared_with_me = relationship(
+    "Location", secondary=shared_locations, backref="user"
+)
 
 
 class Location(Base):
-    __tablename__ = 'locations'
+    __tablename__ = "locations"
 
     id = Column(Integer, primary_key=True)
     nazwa = Column(String(150))
@@ -52,22 +73,29 @@ class Location(Base):
     center_lat = Column(Float(precision=10))
     center_lon = Column(Float(precision=10))
     radius_in_meters = Column(Numeric(10))
-    owner_id = Column(Integer, ForeignKey('users.id'))
+    owner_id = Column(Integer, ForeignKey("users.id"))
     czy_publiczna = Column(Boolean(create_constraint=True))
 
-    owner = relationship('User', backref='locations')
-    loc_mushrooms = relationship('Mushroom', secondary=locations_mushrooms, backref='locations', cascade="all, delete")
-    shared_with = relationship("User", secondary=shared_locations, backref='locations2', cascade="all, delete")
+    owner = relationship("User", backref="locations")
+    loc_mushrooms = relationship(
+        "Mushroom",
+        secondary=locations_mushrooms,
+        backref="locations",
+        cascade="all, delete",
+    )
+    shared_with = relationship(
+        "User", secondary=shared_locations, backref="locations2", cascade="all, delete"
+    )
 
     def __repr__(self):
-        return f'Location {self.id}, name {self.nazwa}'
+        return f"Location {self.id}, name {self.nazwa}"
 
 
-User.my_locations = relationship('Location', order_by=Location.id, backref='users')
+User.my_locations = relationship("Location", order_by=Location.id, backref="users")
 
 
 class Mushroom(Base):
-    __tablename__ = 'mushrooms'
+    __tablename__ = "mushrooms"
 
     id = Column(Integer, primary_key=True)
     nazwa_formalna = Column(String(150), unique=True)
@@ -92,10 +120,15 @@ class Mushroom(Base):
     czy_jadalny = Column(Boolean(create_constraint=True))
     czy_chroniony = Column(Boolean(create_constraint=True))
 
-    mush_locations = relationship('Location', secondary=locations_mushrooms, backref='mushrooms', passive_deletes=True)
+    mush_locations = relationship(
+        "Location",
+        secondary=locations_mushrooms,
+        backref="mushrooms",
+        passive_deletes=True,
+    )
 
     def __repr__(self):
-        return f'Mushroom {self.id}, name {self.nazwa_formalna}'
+        return f"Mushroom {self.id}, name {self.nazwa_formalna}"
 
 
 def main():
