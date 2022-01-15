@@ -195,7 +195,7 @@ add_new_loc_card = dbc.Form([
     dbc.Row([
         dbc.Label("Opis"),
         dbc.Col([
-            dbc.Textarea(id='addnew-loc-information', style={'height': '8rem'}, debounce=True)
+            dbc.Textarea(id='addnew-loc-information', style={'height': '8rem'})
         ], className="mb-3")
     ]),
     dbc.Row([
