@@ -16,11 +16,13 @@ locations_map = dl.Map([
 ], center=[52.15, 19.7], style=MAP_STYLE, id='locations_map')
 
 clicked_loc_card = dbc.Card([
-    html.H2([], id='clicked_loc_name', className='py-1'),
-    html.Hr(),
+    html.H2([], id='clicked_loc_name',
+            #className='py-1',
+            style={'margin-top': '0.2rem', 'margin-left': '1rem'}),
+    #html.Hr(),
     dbc.CardBody(
             [
-                html.P([], id='clicked_loc_info', className='py-1'),
+                html.P([], id='clicked_loc_info'),# className='py-1'),
                 dbc.ListGroup([], id='clicked_loc_mushrooms')
             ]
         ),
@@ -36,23 +38,30 @@ modify_loc_card = dbc.Form([
     dbc.Row([
         dbc.Label("Opis"),
         dbc.Col([
-            dbc.Textarea(id='modify-loc-information')
+            dbc.Textarea(id='modify-loc-information', style={'height': '8rem'})
         ])
-    ]),
+    ], className="mb-3"),
+    dbc.Row([
+        dbc.Label("Promień obszaru w metrach"),
+        dbc.Col([dbc.Input(type='number', id='modify-loc-radius-in-meters',
+                           debounce=True)])
+    ], className="mb-3"),
     dbc.Row([
         dbc.Label("Występujące grzyby:"),
         dbc.Col([
            dcc.Dropdown(options=[], value=[], multi=True, id='modify-loc-mushrooms-list',
+                        placeholder="Wybierz z listy",
                         style=
                             {'color'           : '#212121',
                              'background-color': '#212121',
+                             'height': '6rem'
                              }
                         )
         ])
     ]),
     dbc.Row([
         dbc.Button("Zapisz", id='button-modify-loc-submit', n_clicks=0,
-                   style={'margin-top': '2rem'})
+                   style={'margin-top': '4rem'})
     ]),
     dbc.Row([
         dbc.Alert('Dane lokalizacji zostały zaktualizowane',
@@ -90,7 +99,7 @@ filtry_canvas = dbc.Offcanvas([
             html.Div(
                     [
                         dbc.Label(id='locations_filtered_number'),
-                    ], className="py-4"
+                    ], className="py-1"
             )
         ])),
         dbc.Row(dbc.Col([
@@ -136,18 +145,16 @@ main_page = dbc.Container([
     dcc.Store(id='store-filtered-locations-ids'),
     dcc.Store(id='store-current-location-data'),
     dbc.Row(dbc.Col(html.Div([locations_map]), xl=8, lg=8, md=12, sm=12), justify="center"),
-    dbc.Row(dbc.Col(dbc.Button('Pokaż filtry lokalizacji', id='locations_show_filters', style={'width': "100%"}), xl=8, lg=8, md=12, sm=12), justify="center"),
+    dbc.Row(dbc.Col(dbc.Button('Pokaż filtry lokalizacji', id='locations_show_filters', style={'width': "100%", 'margin-top': '1rem'}), xl=8, lg=8, md=12, sm=12), justify="center"),
     filtry_canvas,
     dbc.Row(dbc.Col([
         dbc.Accordion([
             dbc.AccordionItem([
                 dbc.Tabs([
                     dbc.Tab(clicked_loc_card,
-                            label='Info',
-                            active_tab_style={"textTransform": "uppercase"}),
+                            label='Szczegóły'),
                     dbc.Tab(modify_loc_card,
                             label='Modyfikuj',
-                            active_tab_style={"textTransform": "uppercase"},
                             id='modify-loc-tab'),
                 ])
             ], title="Informacje o lokalizacji", id='location_info_tabs'),
@@ -164,7 +171,7 @@ main_page = dbc.Container([
                 )
             ], title="Udostępnij znajomym")
         ], start_collapsed=True)
-    ], xl=8, lg=8, md=12, sm=12), justify="center"),
+    ], xl=8, lg=8, md=12, sm=12), justify="center", style={'margin-top': '1rem'}),
 ], fluid=True)
 
 
@@ -176,34 +183,38 @@ add_new_loc_card = dbc.Form([
     ], className="mb-3"),
     dbc.Row([
         dbc.Label("Promień obszaru w metrach"),
-        dbc.Col([dbc.Input(type='number', id='loc-addnew-radius-in-meters')])
+        dbc.Col([dbc.Input(type='number', id='loc-addnew-radius-in-meters',
+                           debounce=True)])
     ], className="mb-3"),
     dbc.Row([
         dbc.Label("Nazwa"),
         dbc.Col([
-            dbc.Input(type='text', id='addnew-loc-name')
+            dbc.Input(type='text', id='addnew-loc-name', debounce=True)
         ])
     ], className="mb-3"),
     dbc.Row([
         dbc.Label("Opis"),
         dbc.Col([
-            dbc.Textarea(id='addnew-loc-information')
-        ])
+            dbc.Textarea(id='addnew-loc-information', style={'height': '8rem'}, debounce=True)
+        ], className="mb-3")
     ]),
     dbc.Row([
         dbc.Label("Występujące grzyby:"),
         dbc.Col([
             dcc.Dropdown(options=[], value=[], multi=True, id='addnew-loc-mushrooms-list',
+                         placeholder="Wybierz z listy",
                          style=
                          {'color'           : '#212121',
                           'background-color': '#212121',
+                          'height': '6rem'
                           }
                          )
         ])
     ]),
-    dbc.Row([
-        dbc.Button("Zapisz", id='button-addnew-loc-submit', n_clicks=0)
-    ]),
+    dbc.Row(dbc.Col([
+        dbc.Button("Zapisz", id='button-addnew-loc-submit', n_clicks=0, style={'width': '100%',
+                                                                               'margin-top': '2rem'})
+    ])),
     dbc.Row([
         dbc.Alert('Lokalizacja została dodana do bazy danych',
                   id='loc_add_new_locations_alert',
@@ -217,6 +228,7 @@ add_new_loc_card = dbc.Form([
 add_new_locations_map = dl.Map([
                 dl.TileLayer(),
                 dl.LayerGroup(id="add-new-location-map-layer"),
+                dl.GeoJSON(children=[], id='add-new-location-circle'),
                 dl.LocateControl(options={'locateOptions': {'enableHighAccuracy': True},
                                           'keepCurrentZoomLevel': False,
                                           'showPopup': False})
@@ -225,8 +237,8 @@ add_new_locations_map = dl.Map([
 manage = dbc.Container([
     dbc.Row(dbc.Col([
         add_new_locations_map
-    ], width=12, align='center')),
+    ], xl=8, lg=8, md=12, sm=12, width=12, align='center'), justify='center'),
     dbc.Row(dbc.Col([
         add_new_loc_card
-    ]))
+    ], xl=8, lg=8, md=12, sm=12), justify='center')
 ], fluid=True)

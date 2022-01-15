@@ -8,7 +8,7 @@ acc_create_username = dbc.Row([
             dcc.Input(id='username', type='text', placeholder='username', maxLength=25),
             dbc.FormText(
                     "Wymagane. Maksymalnie 25 znaków",
-                    color="secondary",
+                    color="light",
             )
         ], className="mb-3")
 
@@ -16,8 +16,8 @@ acc_create_email = dbc.Row([
             dbc.Label("Email",  html_for="example-email"),
             dcc.Input(id='useremail', placeholder='email', type='email', maxLength=50),
             dbc.FormText(
-                    "Wymagane. Maksymalnie 50 znaków",
-                    color="secondary",
+                    "Wymagane",
+                    color="light",
             )
         ], className="mb-3")
 
@@ -48,7 +48,7 @@ create_account = dbc.Form([
     acc_create_already_exist_notification
 ])
 
-create_account = dbc.Container([create_account])
+create_account = dbc.Container(dbc.Row(dbc.Col([create_account], lg=4, xl=4), justify='center'))
 
 
 acc_login_username = dbc.Row([
@@ -77,7 +77,7 @@ login_account = dbc.Form([
     acc_login_incorrect_credentials
 ])
 
-login_account = dbc.Container([login_account])
+login_account = dbc.Container(dbc.Row(dbc.Col([login_account], lg=4, xl=4), justify='center'))
 login = login_account
 
 already_exists = html.Div([

@@ -312,7 +312,8 @@ class DatabaseFacade:
                     'MushroomNameFormal'  : x.__dict__['nazwa_formalna'],
                     'MushroomNameInFormal': x.__dict__['nazwa_nieformalna'],
                     'MushroomInfo'        : json.loads(x.opis_cech_json),
-                    # 'Dependencies'        : json.loads(x.warunki_wystepowania_json)
+                    'Dependencies'        : json.loads(x.warunki_wystepowania_json),
+                    'Toxicity_Info'       : json.loads(x.opis_objawow_zatrucia_json),
                     'Photos'              : ["".join([imgs_folder_path, x.strip()])
                                              for x in x.__dict__['photos_json'].split(',')],
                     'Toxic'               : x.__dict__['czy_trujacy'],
@@ -361,10 +362,12 @@ class DatabaseFacade:
         my_friends_ids = []
         if my_friends_usernames:
             for un in my_friends_usernames:
-                my_friends_ids.append({
-                    'username': un,
-                    'id': self.users.fetch_all_users(filters=dict(username=un))[0].__dict__['id']
-                })
+                user_found = self.users.fetch_all_users(filters=dict(username=un))
+                if user_found:
+                    my_friends_ids.append({
+                        'username': un,
+                        'id': user_found[0].__dict__['id']
+                    })
         return my_friends_ids
 
 def upload_to_database():

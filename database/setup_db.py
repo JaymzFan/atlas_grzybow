@@ -1,4 +1,4 @@
-from sqlalchemy import Table, Column, Numeric, Integer, String, ForeignKey, Boolean
+from sqlalchemy import Table, Column, Float, Numeric, Integer, String, ForeignKey, Boolean
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -49,8 +49,8 @@ class Location(Base):
     id = Column(Integer, primary_key=True)
     nazwa = Column(String(150))
     opis = Column(String(3000))
-    center_lat = Column(Numeric(10))
-    center_lon = Column(Numeric(10))
+    center_lat = Column(Float(precision=10))
+    center_lon = Column(Float(precision=10))
     radius_in_meters = Column(Numeric(10))
     owner_id = Column(Integer, ForeignKey('users.id'))
     czy_publiczna = Column(Boolean(create_constraint=True))

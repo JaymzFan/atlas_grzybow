@@ -57,7 +57,10 @@ def register_callbacks(dash_app):
             raise PreventUpdate
 
         options_list = fetch_all_usernames()
-        options_list = [{'label': x, 'value': x} for x in options_list]
+        friends_list = fetch_my_friends(user_id=un['un'])
+        friends_list = sorted(list(set([x['username'] for x in friends_list])))
+        options_list = [{'label': x, 'value': x} for x in options_list
+                        if x != un['un'] and x not in friends_list]
         return options_list
 
     @dash_app.callback(Output("dropdown_friends_to_remove", "options"),
@@ -84,12 +87,19 @@ def register_callbacks(dash_app):
             return False
 
         current_user = current_user['un']
+        all_users_friends = [x['username'] for x in fetch_my_friends(user_id=current_user)]
+
+        if current_user == username:
+            return False
+        if username in all_users_friends:
+            return False
 
         user_found = Users.query.filter_by(username=username).first()
         if user_found:
             friendship = Friends(friend1=current_user, friend2=username)
             db.session.add(friendship)
             db.session.commit()
+
             return True
         return False
 

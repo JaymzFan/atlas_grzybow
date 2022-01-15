@@ -9,13 +9,12 @@ carousel_header = dbc.Carousel(
         {"key": "3", "src": './static/mainpage/main_page_3.jpg'},
     ],
     className="carousel-fade",
-    interval=10000,
-    controls=False
+    interval=4000,
+    controls=True
 )
 
 
 main_page = dbc.Container([
-    dbc.Row(dbc.Col(html.H1())),
-    dbc.Row(dbc.Col(carousel_header, width=12), className="g-0"),
+    dbc.Row(dbc.Col(carousel_header, lg=8, xxl=8, md=12, sm=12, xs=12, width=12), className="g-0", justify='center'),
 ], fluid=True)
 

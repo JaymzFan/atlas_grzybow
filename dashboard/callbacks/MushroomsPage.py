@@ -137,6 +137,16 @@ def register_callbacks(dash_app):
             info.append(html.Hr(className="my-1"))
             info.append(html.H4(y, className='card-title'))
 
+        for x, y in data['Dependencies'].items():
+            info.append(html.H1(x, className='card-title'))
+            info.append(html.Hr(className="my-1"))
+            info.append(html.H4(y, className='card-title'))
+
+        for x, y in data['Toxicity_Info'].items():
+            info.append(html.H1(x, className='card-title'))
+            info.append(html.Hr(className="my-1"))
+            info.append(html.H4(y, className='card-title'))
+
         return [informal_name], formal_name, info
 
     @dash_app.callback(Output("mushroom_toxic_badge", "children"),
@@ -187,3 +197,15 @@ def register_callbacks(dash_app):
         imgs = [{'key': str(nr), 'src': x} for nr, x in enumerate(data['Photos'])]
 
         return imgs
+
+    @dash_app.callback(Output('collapse-mush-info', 'is_open'),
+                       Input("btn-collapse-mush-info", "n_clicks"),
+                       State('collapse-mush-info', 'is_open'))
+    def collapse_mush_info(n_clicks, is_open):
+        if n_clicks == 0:
+            raise PreventUpdate
+
+        if n_clicks:
+            return not is_open
+
+        return is_open

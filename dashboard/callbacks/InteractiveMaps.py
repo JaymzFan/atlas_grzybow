@@ -156,7 +156,7 @@ def render_weather_tables(weather_forecast: List) -> List:
                 dbc.CardBody([
                     html.H2(from_datestr_to_wday_polish(datestr=x['dzien'])),
                     html.P(x['dzien'], className="lead"),
-                    html.P(x['pogoda'].capitalize()),
+                    html.H3(x['pogoda'].capitalize()),
                     html.Hr(),
                     dbc.Row([
                         dbc.Col(dbc.Label('Wschód słońca'), width=8),
@@ -436,6 +436,7 @@ def register_callbacks(dash_app):
 
     @dash_app.callback([Output('modify-loc-name', 'value'),
                         Output('modify-loc-information', 'value'),
+                        Output('modify-loc-radius-in-meters', 'value'),
                         Output('modify-loc-mushrooms-list', 'options'),
                         Output('modify-loc-mushrooms-list', 'value')],
                        Input("store-current-location-data", "data"),
@@ -447,7 +448,7 @@ def register_callbacks(dash_app):
 
         all_mushrooms_opt = [{'value': x, 'label': x} for x in get_mushrooms_types()]
 
-        return loc_data['Nazwa'], loc_data['Opis'], all_mushrooms_opt, loc_data['Grzyby']
+        return loc_data['Nazwa'], loc_data['Opis'], loc_data['location']['radius_in_meters'], all_mushrooms_opt, loc_data['Grzyby']
 
     @dash_app.callback(Output('modify-loc-tab', 'disabled'),
                        Input("store-current-location-data", "data"))

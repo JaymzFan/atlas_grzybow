@@ -5,9 +5,9 @@ import dash_bootstrap_components as dbc
 mushroom_imgs = dbc.Carousel(
         id='curr_mushroom_imgs',
         items=[],
-        controls=False,
+        controls=True,
         indicators=True,
-        interval=None
+        interval=3000
 )
 
 dropdown_options = html.Div([dcc.Dropdown(
@@ -28,13 +28,16 @@ mushroom_card = dbc.Card(
                className="lead"),
         html.H2(id='mushroom_toxic_badge'),
         mushroom_imgs,
-        dbc.CardBody(
-            [
-                html.Div(
-                    id='mushroom_info',
-                    className="py-4",
-                )
-            ]
+        dbc.Button('rozwiń opis', id='btn-collapse-mush-info'),
+        dbc.Collapse(
+                dbc.CardBody(
+                        [
+                            html.Div(
+                                    id='mushroom_info',
+                                    className="py-4",
+                            )
+                        ]
+        ), id='collapse-mush-info', is_open=False
         ),
     ], id='mushroom-card', outline=True
 )
@@ -57,6 +60,6 @@ main_page = dbc.Container([
     dbc.Row([
         dbc.Col([
             mushroom_card
-        ], xl=8, lg=8, md=12, sm=12)
+        ], xl=6, lg=6, md=12, sm=12)
     ], justify="center",)
 ], fluid=True)

@@ -70,6 +70,7 @@ def get_mushrooms_by_names(mushrooms_informal_names):
 
     return all_mushrooms
 
+
 def add_new_location(owner_id, nazwa, opis, center_lat, center_lon, radius_in_meters, mushrooms_names):
     db = DatabaseFacade(session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri())))
 
@@ -81,53 +82,6 @@ def add_new_location(owner_id, nazwa, opis, center_lat, center_lon, radius_in_me
                               czy_publiczna=0)
 
     return True
-
-
-def fetch_locations_data():
-    demo_data = [
-        {
-            'id'        : 1,
-            'location'  : {'lng': 21, 'lat': 51, 'radius': 50},
-            'Nazwa'     : 'Lokalizacja 1',
-            'Opis'      : 'Opis 1',
-            'Grzyby'    : ['Grzyb2', 'Grzyb3', "Grzyb6"],
-            'Shared_by' : None,
-            'Shared_with': [{'id': 1, 'username': 'user1'}],
-            'prywatnosc': "public"
-        },
-        {
-            'id'        : 2,
-            'location'  : {'lng': 21, 'lat': 52, 'radius': 500},
-            'Nazwa'     : 'Lokalizacja 2',
-            'Opis'      : 'Opis 2',
-            'Grzyby'    : ['Grzyb1', 'Grzyb3'],
-            'Shared_by' : None,
-            'Shared_with':  [{'id': 2, 'username': 'user2'}],
-            'prywatnosc': "public"
-        },
-        {
-            'id'        : 3,
-            'location'  : {'lng': 21, 'lat': 53, 'radius': 50},
-            'Nazwa'     : 'Lokalizacja 3',
-            'Opis'      : 'Opis 3',
-            'Grzyby'    : ['Grzyb1', 'Grzyb3'],
-            'Shared_by' : 'Mietek',
-            'Shared_with':  [{'id': 1, 'username': 'user1'},
-                             {'id': 2, 'username': 'user2'}],
-            'prywatnosc': "shared_with_me"
-        },
-        {
-            'id'        : 4,
-            'location'  : {'lng': 21, 'lat': 54, 'radius': 50},
-            'Nazwa'     : 'Lokalizacja 4',
-            'Opis'      : 'Opis 4',
-            'Grzyby'    : ['Grzyb1'],
-            'Shared_by' : None,
-            'Shared_with': [],
-            'prywatnosc': "my_location"
-        }
-    ]
-    return demo_data
 
 
 def get_mushrooms_types():
@@ -171,6 +125,18 @@ def register_callbacks(dash_app):
         if n_clicks == 0:
             raise PreventUpdate
 
+        if radius is None:
+            raise PreventUpdate
+
+        if radius < 0:
+            raise PreventUpdate
+
+        if loc_nazwa is None:
+            raise PreventUpdate
+
+        if loc_center is None:
+            raise PreventUpdate
+
         add_new_location(owner_id=loggedin_user['id'],
                          nazwa=loc_nazwa,
                          opis=loc_opis,
@@ -194,13 +160,16 @@ def register_callbacks(dash_app):
                        [State('store-current-location-data', 'data'),
                         State('modify-loc-mushrooms-list', 'value'),
                         State('modify-loc-information', 'value'),
-                        State('modify-loc-name', 'value')])
-    def popup_alert_modification_successful(n_clicks, curr_loc_data, mushrooms, opis, nazwa):
+                        State('modify-loc-name', 'value'),
+                        State('modify-loc-radius-in-meters', 'value')])
+    def modify_and_popup_alert_successful(n_clicks, curr_loc_data, mushrooms, opis, nazwa, radius):
         if n_clicks == 0:
             raise PreventUpdate
         curr_loc_id = curr_loc_data['id']
 
-        modify_existing_location(loc_id=curr_loc_id, params=dict(nazwa=nazwa, opis=opis),
+        modify_existing_location(loc_id=curr_loc_id, params=dict(nazwa=nazwa,
+                                                                 opis=opis,
+                                                                 radius_in_meters=radius),
                                  mush_informal_names=[mushrooms])
         return True
 
@@ -228,3 +197,21 @@ def register_callbacks(dash_app):
         curr_loc_id = curr_loc['id']
         set_shared_with_to_location(loc_id=curr_loc_id, friends_ids=friends_to_share_with)
         return True
+
+    @dash_app.callback(Output("add-new-location-circle", "children"),
+                       Input("loc-addnew-radius-in-meters", "value"),
+                       State('add-new-location-map', 'click_lat_lng'))
+    def render_circle(circle_radius, click_lat_lng):
+
+        if circle_radius is None:
+            raise PreventUpdate
+
+        if circle_radius < 0:
+            raise PreventUpdate
+
+        if click_lat_lng is None:
+            raise PreventUpdate
+
+        return [dl.Circle(center=click_lat_lng,
+                          radius=circle_radius,
+                          interactive=False)]
