@@ -19,7 +19,8 @@ def load_mushrooms_data():
     db = DatabaseFacade(
         session_manager=DatabaseSessionManager(db_engine=create_engine(get_db_uri()))
     )
-    return db.fetch_mushrooms_data()
+    ms_data = db.fetch_mushrooms_data()
+    return ms_data
 
 
 def register_callbacks(dash_app):

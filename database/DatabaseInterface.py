@@ -44,23 +44,12 @@ class DatabaseSessionManager:
 
     def update_objects_relationship(self, item_id, item_class, **kwargs):
         with self.session() as s:
-            print("A")
-
             item = (
                 s.query(item_class).filter_by(id=item_id).options(eagerload("*")).one()
             )
-            print(item)
-            print("B")
             for key, value in kwargs.items():
-                print("C")
-                print(value)
-                print(key)
                 item.loc_mushrooms = value
-                print("D")
-            #
-            # for v in value:
-            #     item.loc_mushrooms.append(v)
-            #     setattr(item, 'loc_mushroomskey', v)
+
             s.commit()
 
         self.db_engine.dispose()
@@ -384,7 +373,8 @@ class DatabaseFacade:
                     },
                 }
             )
-        return all_mushrooms_data
+
+        return sorted(all_mushrooms_data, key=lambda x: x['MushroomNameInFormal'])
 
     def set_mushrooms_to_location(
         self, location_id, mushroom_ids, mushroom_informalnames=None
@@ -454,14 +444,14 @@ def upload_to_database():
 
     # wyświetlnaie znajomych
     a = db.friends.fetch_friends(filters=dict(friend1="admin"))
-    a = [{"id": x.__dict__["id"], "username": x.__dict__["friend2"]} for x in a]
 
     # Dodawanie grzybów
     grzyby = pd.read_excel(
-        "database/datafeed/datafeed.xlsx", keep_default_na=False, sheet_name="Grzyby"
+        # "database/datafeed/datafeed.xlsx", keep_default_na=False, sheet_name="Grzyby"
+        "database/intermediate/Grzyby_Razem_wraz_ze_zmianami_w_nazwach_zdjęć.xlsx", keep_default_na=False, sheet_name="Grzyby"
     )
     lokalizacje = pd.read_excel(
-        "database/datafeed/datafeed.xlsx",
+        "database/intermediate/Grzyby_Razem_wraz_ze_zmianami_w_nazwach_zdjęć.xlsx",
         keep_default_na=False,
         sheet_name="Lokalizacje",
     )
@@ -493,6 +483,22 @@ def upload_to_database():
     for i in ["nazwa_formalna", "nazwa_nieformalna"]:
         grzyby[i] = grzyby[[i]].apply(lambda x: x.str.strip())
 
+    for i in ["opis_cech_json", "warunki_wystepowania_json", "opis_objawow_zatrucia_json"]:
+        grzyby[i] = grzyby[[i]].apply(lambda x: x.str.replace("\n", ""))
+
+    for _, grzyb in grzyby.iterrows():
+        print(grzyb["nazwa_formalna"])
+        print("1")
+        # json.loads(grzyb['opis_cech_json'].replace("\n", ""))
+        json.loads(grzyb['opis_cech_json'])
+        print("2")
+        # json.loads(grzyb['warunki_wystepowania_json'].replace("\n", ""))
+        json.loads(grzyb['warunki_wystepowania_json'])
+        print("3")
+        # json.loads(grzyb['opis_objawow_zatrucia_json'].replace("\n", ""))
+        json.loads(grzyb['opis_objawow_zatrucia_json'])
+
+
     for _, grzyb in grzyby.iterrows():
         db.mushrooms.add_new_mushroom(**grzyb.to_dict())
 
@@ -507,8 +513,8 @@ def upload_to_database():
     # db.set_mushrooms_to_location(location_id=1, mushroom_ids=[]) # DZIAłA !!!
 
     # Usuwanie lokalizacji !!! dziaŁA !!!
-    locs = db.locations.fetch_all_locations()
-    db.locations.session.remove_objects(objects=locs)
+    # locs = db.locations.fetch_all_locations()
+    # db.locations.session.remove_objects(objects=locs)
 
     for _, loc in lokalizacje.iterrows():
 

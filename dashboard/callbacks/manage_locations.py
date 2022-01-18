@@ -75,7 +75,9 @@ def add_new_location(
     )
 
     all_mushrooms = db.mushrooms.fetch_all_mushrooms()
-
+    print(all_mushrooms)
+    all_mushrooms = [x for x in all_mushrooms if x.__dict__['nazwa_nieformalna'] in mushrooms_names]
+    print(all_mushrooms)
     db.locations.add_location(
         owner_id=owner_id,
         nazwa=nazwa,
@@ -163,7 +165,7 @@ def register_callbacks(dash_app):
 
         if loc_center is None:
             raise PreventUpdate
-
+        print(mushrooms_names)
         add_new_location(
             owner_id=loggedin_user["id"],
             nazwa=loc_nazwa,
